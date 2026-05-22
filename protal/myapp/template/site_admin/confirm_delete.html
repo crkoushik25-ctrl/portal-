@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Delete {{ object_type }} | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="delete-panel">
+      <div class="eyebrow">Confirm delete</div>
+      <h1>Delete this {{ object_type }}?</h1>
+      <p>{{ object_name }}</p>
+      <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Delete</button>
+        <a class="btn btn-ghost" href="{{ cancel_url }}">Cancel</a>
+      </form>
+    </div>
+  </section>
+{% endblock %}

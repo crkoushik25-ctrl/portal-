@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Coding Challenges | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="page-title">
+      <div class="eyebrow">Coding challenges</div>
+      <h1>Build placement-ready problem solving habits.</h1>
+      <p>Practice data structures, logic, recursion, and interview-style coding questions with quick challenge cards.</p>
+    </div>
+
+    <div class="split-layout">
+      <div class="grid three">
+        <div class="card">
+          <h3>Easy Problems</h3>
+          <p>Warm up with arrays, strings, loops, and basic implementation.</p>
+          <div class="stat-highlight" style="font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem; color: var(--text-heading);">
+            {{ easy_solved }} / {{ easy_total }} solved
+          </div>
+        </div>
+        <div class="card">
+          <h3>Medium Problems</h3>
+          <p>Practice hashing, recursion, two pointers, and searching patterns.</p>
+          <div class="stat-highlight" style="font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem; color: var(--text-heading);">
+            {{ medium_solved }} / {{ medium_total }} solved
+          </div>
+        </div>
+        <div class="card">
+          <h3>Hard Problems</h3>
+          <p>Take on dynamic programming, graphs, and optimized approaches.</p>
+          <div class="stat-highlight" style="font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem; color: var(--text-heading);">
+            {{ hard_solved }} / {{ hard_total }} solved
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel daily-challenge">
+        <span class="badge medium">Daily Challenge</span>
+        <h3>{{ daily_test.title|default:"DSA Challenge" }}</h3>
+        <p>{{ daily_test.topics|default:"Arrays, strings, and recursion" }}</p>
+        <div class="chip-row">
+          <span class="chip">{{ daily_test.get_difficulty_display|default:"Medium" }}</span>
+          <span class="chip">{{ daily_test.duration_minutes|default:45 }} minutes</span>
+          <span class="chip">{{ daily_test.question_count|default:5 }} questions</span>
+        </div>
+        {% if daily_test %}
+          <form method="post" action="{% url 'start_test' daily_test.id %}">
+            {% csrf_token %}
+            <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Starting...">Start Challenge</button>
+          </form>
+        {% else %}
+          <a class="btn btn-primary btn-wide" href="{% url 'mocktest' %}">View Mock Tests</a>
+        {% endif %}
+      </aside>
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="section-heading">
+      <div>
+        <div class="eyebrow">Challenge library</div>
+        <h2>Available coding tests.</h2>
+      </div>
+      <p>Tests come from the Django database and are created automatically if the database is empty.</p>
+    </div>
+
+    <div class="grid three">
+      {% for test in tests %}
+        <article class="test-card">
+          <div class="badge-row">
+            <span class="badge {{ test.difficulty }}">{{ test.get_difficulty_display }}</span>
+            <span class="badge">{{ test.question_count }} questions</span>
+          </div>
+          <h3>{{ test.title }}</h3>
+          <p>{{ test.topics }}</p>
+          <p>{{ test.duration_minutes }} minutes</p>
+          <form method="post" action="{% url 'start_test' test.id %}">
+            {% csrf_token %}
+            <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Starting...">Start Practice</button>
+          </form>
+        </article>
+      {% empty %}
+        <div class="empty-note">No coding tests are available yet.</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="panel">
+      <h2 class="panel-title">Coding Progress</h2>
+      <div class="progress-list">
+        <div class="progress-item">
+          <div class="progress-meta"><span>Easy</span><span>{{ easy_percent|default:0 }}%</span></div>
+          <div class="progress-track"><div class="progress-fill" data-progress="{{ easy_percent|default:0 }}"></div></div>
+        </div>
+        <div class="progress-item">
+          <div class="progress-meta"><span>Medium</span><span>{{ medium_percent|default:0 }}%</span></div>
+          <div class="progress-track"><div class="progress-fill amber" data-progress="{{ medium_percent|default:0 }}"></div></div>
+        </div>
+        <div class="progress-item">
+          <div class="progress-meta"><span>Hard</span><span>{{ hard_percent|default:0 }}%</span></div>
+          <div class="progress-track"><div class="progress-fill rose" data-progress="{{ hard_percent|default:0 }}"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

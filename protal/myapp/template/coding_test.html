@@ -1,0 +1,765 @@
+{% extends "base.html" %}
+
+{% block title %}{{ test.title }} | PrepNova Compiler{% endblock %}
+
+{% block content %}
+<style>
+  /* Premium Dark IDE Style overrides for the compiler screen */
+  .compiler-container {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    height: calc(100vh - 120px);
+    margin-top: 1rem;
+  }
+
+  .left-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+  }
+
+  .question-nav-card {
+    background: var(--panel-bg);
+    border: 1px border-color;
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .question-list-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .question-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-body);
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .question-nav-btn:hover {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.05);
+  }
+
+  .question-nav-btn.active {
+    background: var(--primary-color);
+    color: #ffffff;
+    border-color: var(--primary-color);
+  }
+
+  .question-nav-btn .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #6b7280;
+  }
+
+  .question-nav-btn.passed .status-dot {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+  }
+
+  .question-nav-btn.failed .status-dot {
+    background: #ef4444;
+  }
+
+  .main-workspace {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 1rem;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .problem-desc-panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .editor-panel {
+    display: flex;
+    flex-direction: column;
+    background: #090c15;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  .lang-select {
+    background: #1e293b;
+    color: #f1f5f9;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 0.4rem 1.5rem 0.4rem 0.75rem;
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .editor-textarea-wrapper {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+    min-height: 0;
+  }
+
+  .line-numbers {
+    width: 3rem;
+    background: #0f172a;
+    color: #475569;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    padding: 1rem 0.5rem;
+    text-align: right;
+    user-select: none;
+    border-right: 1px solid #1e293b;
+    overflow: hidden;
+  }
+
+  .editor-textarea {
+    flex-grow: 1;
+    height: 100%;
+    background: transparent;
+    color: #e2e8f0;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    padding: 1rem;
+    border: none;
+    resize: none;
+    outline: none;
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: auto;
+    tab-size: 4;
+  }
+
+  .editor-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    background: #0f172a;
+    border-top: 1px solid #1e293b;
+  }
+
+  .console-panel {
+    background: #0b0f19;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 1.25rem;
+    height: 250px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .console-tab-header {
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 0.5rem;
+  }
+
+  .console-tab {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .console-tab.active {
+    color: #38bdf8;
+    border-bottom: 2px solid #38bdf8;
+  }
+
+  .console-output {
+    flex-grow: 1;
+    background: #020617;
+    color: #38bdf8;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    padding: 0.75rem;
+    border-radius: 6px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .custom-input-box {
+    width: 100%;
+    min-height: 60px;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-family: monospace;
+    font-size: 0.85rem;
+    resize: vertical;
+    outline: none;
+  }
+
+  /* Split layout for the right pane */
+  .right-pane {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 1rem;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Timer & Header components */
+  .test-timer-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .timer-display {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: #f59e0b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .timer-display.danger {
+    color: #ef4444;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+
+  .difficulty-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .difficulty-badge.easy { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+  .difficulty-badge.medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+  .difficulty-badge.hard { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+  .testcase-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .testcase-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .testcase-value {
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+  }
+</style>
+
+<div class="test-timer-banner">
+  <div>
+    <span class="eyebrow">Exam Session</span>
+    <h2 style="margin: 0; font-size: 1.25rem; color: var(--text-heading);">{{ test.title }}</h2>
+  </div>
+  <div class="timer-display" id="timer">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="12" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>
+    <span id="countdown">--:--:--</span>
+  </div>
+</div>
+
+<div class="compiler-container">
+  <div class="left-pane">
+    <div class="question-nav-card">
+      <h3 style="margin-top:0;">Questions</h3>
+      <div class="question-list-group">
+        {% for q in questions %}
+          <button class="question-nav-btn {% if forloop.first %}active{% endif %}" id="nav-q-{{ q.id }}" onclick="switchQuestion({{ q.id }})">
+            <span>Q{{ forloop.counter }}. {{ q.title }}</span>
+            <span class="status-dot" id="dot-q-{{ q.id }}"></span>
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="question-nav-card" style="margin-top: auto;">
+      <form id="submit-exam-form" method="post" action="{% url 'submit_coding_exam' attempt.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-wide" onclick="return confirmSubmitExam()">Submit Entire Exam</button>
+      </form>
+      <a href="{% url 'coding' %}" class="btn btn-ghost btn-wide" style="margin-top: 0.5rem;" onclick="return confirm('Any unsaved code runs will be preserved, but are you sure you want to exit?')">Leave Exam</a>
+    </div>
+  </div>
+
+  <div class="main-workspace">
+    <!-- Problem Description Area -->
+    <div class="problem-desc-panel" id="problem-details">
+      {% for q in questions %}
+        <div class="question-content" id="q-content-{{ q.id }}" style="display: {% if forloop.first %}block{% else %}none{% endif %};">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span class="difficulty-badge {{ q.difficulty }}">{{ q.get_difficulty_display }}</span>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Points: 100</span>
+          </div>
+          <h2 style="margin-top: 0; color: var(--text-heading);">{{ q.title }}</h2>
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1rem 0;">
+          
+          <div style="line-height: 1.6; color: var(--text-body);">
+            {{ q.description|safe }}
+          </div>
+
+          <div style="margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 0.5rem; color: var(--text-heading);">Input Format</h4>
+            <p style="font-size: 0.9rem;">{{ q.input_format }}</p>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <h4 style="margin-bottom: 0.5rem; color: var(--text-heading);">Output Format</h4>
+            <p style="font-size: 0.9rem;">{{ q.output_format }}</p>
+          </div>
+
+          <div style="margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 0.25rem; color: var(--text-heading);">Sample Input</h4>
+            <div class="testcase-card">
+              <div class="testcase-value">{{ q.sample_input }}</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <h4 style="margin-bottom: 0.25rem; color: var(--text-heading);">Sample Output</h4>
+            <div class="testcase-card">
+              <div class="testcase-value">{{ q.sample_output }}</div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Code Editor & Console Area -->
+    <div class="right-pane">
+      <div class="editor-panel">
+        <div class="editor-header">
+          <span style="font-weight: 600; color: #94a3b8; font-family: monospace;">editor.exe</span>
+          <select id="lang-selector" class="lang-select" onchange="changeLanguage()">
+            <option value="python">Python 3</option>
+            <option value="java">Java (JDK 17)</option>
+            <option value="cpp">C++ (GCC G++)</option>
+            <option value="c">C (GCC)</option>
+            <option value="javascript">JavaScript (Node.js)</option>
+          </select>
+        </div>
+
+        <div class="editor-textarea-wrapper">
+          <div class="line-numbers" id="line-nums">
+            1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18<br>19<br>20
+          </div>
+          <textarea id="editor" class="editor-textarea" spellcheck="false" oninput="updateLineNumbers()"></textarea>
+        </div>
+
+        <div class="editor-footer">
+          <button class="btn btn-ghost" style="padding: 0.5rem 1rem; border-color:#334155; color:#94a3b8;" onclick="resetCode()">Reset Code</button>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-ghost" style="background:#1e293b; color:#f1f5f9; border:none; padding: 0.5rem 1.25rem;" id="run-btn" onclick="runCode()">Run Code</button>
+            <button class="btn btn-primary" style="padding: 0.5rem 1.5rem;" id="submit-btn" onclick="submitCode()">Submit Solution</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="console-panel">
+        <div class="console-tab-header">
+          <button class="console-tab active" id="tab-output-btn" onclick="switchConsoleTab('output')">Console Output</button>
+          <button class="console-tab" id="tab-input-btn" onclick="switchConsoleTab('input')">Custom Input</button>
+        </div>
+
+        <div id="console-output-container" class="console-output">
+          Run your code or submit to see results.
+        </div>
+
+        <div id="console-input-container" style="display: none; flex-grow:1;">
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.25rem;">Standard input to feed to program:</div>
+          <textarea id="custom-input" class="custom-input-box" placeholder="Enter input here..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Starter templates & submissions data -->
+{{ questions_data|json_script:"coding-questions-data" }}
+{{ latest_subs|json_script:"latest_subs_json" }}
+
+<script>
+  // State management
+  const questionsData = JSON.parse(document.getElementById('coding-questions-data').textContent);
+  
+  // Try to load latest submissions from database if available
+  let latestSubs = {};
+  const subsScript = document.getElementById('latest_subs_json');
+  if (subsScript) {
+    try {
+      latestSubs = JSON.parse(subsScript.textContent) || {};
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  // Active state
+  let activeQuestionId = "{{ questions.0.id }}";
+  let activeLang = "{{ default_lang }}";
+  
+  // Track working code in memory
+  let codeDrafts = {};
+
+  // Initialize drafts with database submissions or default templates
+  Object.keys(questionsData).forEach(qId => {
+    codeDrafts[qId] = {
+      python: questionsData[qId].python,
+      java: questionsData[qId].java,
+      cpp: questionsData[qId].cpp,
+      c: questionsData[qId].c,
+      javascript: questionsData[qId].javascript
+    };
+
+    // If there is an existing submission for this question, load it!
+    const sub = latestSubs[qId];
+    if (sub) {
+      codeDrafts[qId][sub.language] = sub.code;
+      // Mark submission status in left pane button
+      const navBtn = document.getElementById(`nav-q-${qId}`);
+      const dot = document.getElementById(`dot-q-${qId}`);
+      if (navBtn && dot) {
+        navBtn.classList.remove('passed', 'failed');
+        if (sub.status === 'Passed') {
+          navBtn.classList.add('passed');
+        } else {
+          navBtn.classList.add('failed');
+        }
+      }
+    }
+  });
+
+  // Set initial state
+  document.getElementById('lang-selector').value = activeLang;
+  document.getElementById('editor').value = codeDrafts[activeQuestionId][activeLang];
+  updateLineNumbers();
+
+  // Switch questions
+  function switchQuestion(qId) {
+    // Save current editor draft first
+    const currentCode = document.getElementById('editor').value;
+    codeDrafts[activeQuestionId][activeLang] = currentCode;
+
+    // Remove active class from old nav button
+    document.getElementById(`nav-q-${activeQuestionId}`).classList.remove('active');
+    
+    // Hide old question content
+    document.getElementById(`q-content-${activeQuestionId}`).style.display = 'none';
+
+    // Update active
+    activeQuestionId = qId;
+
+    // Show new question content
+    document.getElementById(`q-content-${activeQuestionId}`).style.display = 'block';
+    
+    // Add active class to new nav button
+    document.getElementById(`nav-q-${activeQuestionId}`).classList.add('active');
+
+    // Restore code editor text
+    document.getElementById('editor').value = codeDrafts[activeQuestionId][activeLang];
+    updateLineNumbers();
+    
+    // Reset output tab
+    document.getElementById('console-output-container').innerText = "Switched to " + questionsData[activeQuestionId].title + ". Run or submit solution.";
+    switchConsoleTab('output');
+  }
+
+  // Handle language change
+  function changeLanguage() {
+    // Save current draft
+    const currentCode = document.getElementById('editor').value;
+    codeDrafts[activeQuestionId][activeLang] = currentCode;
+
+    // Change language
+    activeLang = document.getElementById('lang-selector').value;
+
+    // Load template or existing draft
+    document.getElementById('editor').value = codeDrafts[activeQuestionId][activeLang];
+    updateLineNumbers();
+  }
+
+  // Reset starter code
+  function resetCode() {
+    if (confirm("Reset editor to original starter template? All current edits for this language will be lost.")) {
+      const template = questionsData[activeQuestionId][activeLang];
+      document.getElementById('editor').value = template;
+      codeDrafts[activeQuestionId][activeLang] = template;
+      updateLineNumbers();
+    }
+  }
+
+  // Line numbers generator
+  function updateLineNumbers() {
+    const editor = document.getElementById('editor');
+    const lineNums = document.getElementById('line-nums');
+    const lines = editor.value.split('\n');
+    const lineCount = Math.max(lines.length, 20);
+    
+    let html = '';
+    for (let i = 1; i <= lineCount; i++) {
+      html += i + '<br>';
+    }
+    lineNums.innerHTML = html;
+  }
+
+  // Editor keyboard utility (enable tabs in textarea)
+  document.getElementById('editor').addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+      this.selectionStart = this.selectionEnd = start + 4;
+      updateLineNumbers();
+    }
+  });
+
+  // Sync scroll between textarea and line numbers
+  document.getElementById('editor').addEventListener('scroll', function() {
+    document.getElementById('line-nums').scrollTop = this.scrollTop;
+  });
+
+  // Switch console tab
+  function switchConsoleTab(tab) {
+    const outputBtn = document.getElementById('tab-output-btn');
+    const inputBtn = document.getElementById('tab-input-btn');
+    const outputCont = document.getElementById('console-output-container');
+    const inputCont = document.getElementById('console-input-container');
+
+    if (tab === 'output') {
+      outputBtn.classList.add('active');
+      inputBtn.classList.remove('active');
+      outputCont.style.display = 'block';
+      inputCont.style.display = 'none';
+    } else {
+      inputBtn.classList.add('active');
+      outputBtn.classList.remove('active');
+      inputCont.style.display = 'flex';
+      outputCont.style.display = 'none';
+    }
+  }
+
+  // Run code against custom or sample input
+  function runCode() {
+    const runBtn = document.getElementById('run-btn');
+    const consoleOutput = document.getElementById('console-output-container');
+    const code = document.getElementById('editor').value;
+    const customInput = document.getElementById('custom-input').value;
+    
+    switchConsoleTab('output');
+    consoleOutput.innerHTML = "Compiling and running code...\n";
+    runBtn.disabled = true;
+    runBtn.innerText = "Running...";
+
+    // Get CSRF Token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    const formData = new FormData();
+    formData.append('question_id', activeQuestionId);
+    formData.append('language', activeLang);
+    formData.append('code', code);
+    formData.append('custom_input', customInput);
+
+    fetch("{% url 'run_code' attempt.id %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrfToken
+      },
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      runBtn.disabled = false;
+      runBtn.innerText = "Run Code";
+
+      if (data.status === 'Success') {
+        let note = "";
+        if (data.simulated) {
+          note = "<span style='color: #a855f7;'>[INFO: Running in high-fidelity simulated compiler context]</span>\n\n";
+        }
+        let verHtml = "";
+        if (data.verification === 'Correct') {
+          verHtml = "<div style='background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid #10b981;'><strong style='font-weight: bold;'>✔ Sample Test Case Passed! (Correct)</strong></div>";
+        } else if (data.verification === 'Wrong') {
+          verHtml = "<div style='background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid #ef4444;'><strong style='font-weight: bold;'>✘ Sample Test Case Failed! (Wrong)</strong><br><span style='font-size: 0.85rem; opacity: 0.9; font-family: monospace; white-space: pre-wrap; display: block; margin-top: 0.5rem;'>Expected: " + data.expected + "\nActual:   " + data.output.trim() + "</span></div>";
+        } else if (data.verification) {
+          verHtml = "<div style='background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid #f59e0b; font-size: 0.85rem;'>" + data.verification + "</div>";
+        }
+        consoleOutput.innerHTML = note + verHtml + "<span style='color: #94a3b8; font-weight: bold;'>Your Output:</span>\n\n" + data.output;
+      } else if (data.status === 'Compile Error') {
+        consoleOutput.innerHTML = "<span style='color: #ef4444; font-weight: bold;'>Compile Error:</span>\n\n" + data.error;
+      } else if (data.status === 'Runtime Error') {
+        consoleOutput.innerHTML = "<span style='color: #ef4444; font-weight: bold;'>Runtime Error:</span>\n\n" + data.error + "\n\nOutput before error:\n" + data.output;
+      } else {
+        consoleOutput.innerHTML = "<span style='color: #f59e0b; font-weight: bold;'>Error: " + data.status + "</span>\n\n" + data.error;
+      }
+    })
+    .catch(error => {
+      runBtn.disabled = false;
+      runBtn.innerText = "Run Code";
+      consoleOutput.innerHTML = "<span style='color: #ef4444; font-weight: bold;'>Network Connection Error:</span>\n\nCould not reach compiler service. Please try again.";
+      console.log(error);
+    });
+  }
+
+  // Submit single solution (runs test cases)
+  function submitCode() {
+    const submitBtn = document.getElementById('submit-btn');
+    const consoleOutput = document.getElementById('console-output-container');
+    const code = document.getElementById('editor').value;
+    const navBtn = document.getElementById(`nav-q-${activeQuestionId}`);
+    const dot = document.getElementById(`dot-q-${activeQuestionId}`);
+    
+    switchConsoleTab('output');
+    consoleOutput.innerHTML = "Submitting code and running test cases...\n";
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Submitting...";
+
+    // Get CSRF Token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    const formData = new FormData();
+    formData.append('question_id', activeQuestionId);
+    formData.append('language', activeLang);
+    formData.append('code', code);
+
+    fetch("{% url 'submit_code' attempt.id %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrfToken
+      },
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Submit Solution";
+
+      navBtn.classList.remove('passed', 'failed');
+
+      if (data.status === 'Passed') {
+        navBtn.classList.add('passed');
+        consoleOutput.innerHTML = "<span style='color: #10b981; font-weight: bold;'>All Test Cases Passed!</span>\n\nPassed " + data.passed_cases + "/" + data.total_cases + " test cases successfully.";
+      } else if (data.status === 'Failed') {
+        navBtn.classList.add('failed');
+        consoleOutput.innerHTML = "<span style='color: #ef4444; font-weight: bold;'>Some Test Cases Failed:</span>\n\nPassed " + data.passed_cases + "/" + data.total_cases + " test cases.";
+      } else if (data.status === 'Compile Error') {
+        navBtn.classList.add('failed');
+        consoleOutput.innerHTML = "<span style='color: #ef4444; font-weight: bold;'>Compile Error:</span>\n\n" + data.compile_error;
+      } else {
+        navBtn.classList.add('failed');
+        consoleOutput.innerHTML = "<span style='color: #f59e0b; font-weight: bold;'>Submission Status: " + data.status + "</span>\n\nPassed " + data.passed_cases + "/" + data.total_cases + " cases.";
+      }
+    })
+    .catch(error => {
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Submit Solution";
+      consoleOutput.innerHTML = "<span style='color: #ef4444; font-weight: bold;'>Connection Error:</span>\n\nFailed to complete submission. Try again.";
+      console.log(error);
+    });
+  }
+
+  // Timer logic
+  let timeLeft = parseInt("{{ seconds_left|default:0 }}") || 0;
+  
+  function updateTimer() {
+    const timerElem = document.getElementById('timer');
+    const countdownElem = document.getElementById('countdown');
+    
+    if (timeLeft <= 0) {
+      countdownElem.innerText = "00:00:00";
+      timerElem.classList.add('danger');
+      alert("Time limit reached! Submitting your exam automatically.");
+      document.getElementById('submit-exam-form').submit();
+      return;
+    }
+    
+    if (timeLeft < 300) { // less than 5 mins
+      timerElem.classList.add('danger');
+    }
+    
+    const hrs = Math.floor(timeLeft / 3600);
+    const mins = Math.floor((timeLeft % 3600) / 60);
+    const secs = timeLeft % 60;
+    
+    countdownElem.innerText = 
+      String(hrs).padStart(2, '0') + ":" + 
+      String(mins).padStart(2, '0') + ":" + 
+      String(secs).padStart(2, '0');
+      
+    timeLeft--;
+    setTimeout(updateTimer, 1000);
+  }
+
+  updateTimer();
+
+  function confirmSubmitExam() {
+    return confirm("Are you sure you want to finish the exam? This will lock your answers and compute your final score.");
+  }
+</script>
+{% endblock %}

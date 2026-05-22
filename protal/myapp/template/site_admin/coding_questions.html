@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Coding Questions | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="admin-hero">
+      <div>
+        <div class="eyebrow">Coding Questions</div>
+        <h1>Modify coding challenges.</h1>
+        <p>Edit description, input/output constraints, test cases, and starter templates for coding exams.</p>
+      </div>
+      <a class="btn btn-primary" href="{% url 'site_admin_coding_question_create' %}">Create Coding Question</a>
+    </div>
+
+    <div class="admin-nav">
+      <a href="{% url 'site_admin_dashboard' %}">Overview</a>
+      <a href="{% url 'site_admin_tests' %}">Tests</a>
+      <a href="{% url 'site_admin_questions' %}">Aptitude Questions</a>
+      <a class="is-active" href="{% url 'site_admin_coding_questions' %}">Coding Questions</a>
+      <a href="/admin/">Django Admin</a>
+    </div>
+
+    <form class="admin-filter" method="get">
+      <label for="test">Filter by test</label>
+      <select id="test" name="test">
+        <option value="">All coding tests</option>
+        {% for test in tests %}
+          <option value="{{ test.id }}" {% if test_id == test.id|stringformat:"s" %}selected{% endif %}>{{ test.title }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-ghost" type="submit">Apply</button>
+      <a class="btn btn-ghost" href="{% url 'site_admin_coding_questions' %}">Reset</a>
+    </form>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Test</th>
+            <th>Title</th>
+            <th>Difficulty</th>
+            <th>Test Cases Count</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for question in questions %}
+            <tr>
+              <td>Q{{ question.order }}</td>
+              <td>{{ question.test.title }}</td>
+              <td>{{ question.title }}</td>
+              <td><span class="badge">{{ question.get_difficulty_display }}</span></td>
+              <td>{{ question.test_cases|length }} cases</td>
+              <td class="table-actions">
+                <a class="btn btn-small btn-ghost" href="{% url 'site_admin_coding_question_update' question.id %}">Edit</a>
+                <a class="btn btn-small btn-danger" href="{% url 'site_admin_coding_question_delete' question.id %}">Delete</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6">No coding questions found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

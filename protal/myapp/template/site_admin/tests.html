@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Tests | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="admin-hero">
+      <div>
+        <div class="eyebrow">Tests</div>
+        <h1>Update website tests.</h1>
+        <p>Create and edit aptitude, coding, mock, and resume-related test records used across the website.</p>
+      </div>
+      <a class="btn btn-primary" href="{% url 'site_admin_test_create' %}">Create Test</a>
+    </div>
+
+    <div class="admin-nav">
+      <a href="{% url 'site_admin_dashboard' %}">Overview</a>
+      <a class="is-active" href="{% url 'site_admin_tests' %}">Tests</a>
+      <a href="{% url 'site_admin_questions' %}">Aptitude Questions</a>
+      <a href="{% url 'site_admin_coding_questions' %}">Coding Questions</a>
+      <a href="/admin/">Django Admin</a>
+    </div>
+
+    <form class="admin-filter" method="get">
+      <label for="category">Filter by category</label>
+      <select id="category" name="category">
+        <option value="">All categories</option>
+        {% for value, label in categories %}
+          <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-ghost" type="submit">Apply</button>
+      <a class="btn btn-ghost" href="{% url 'site_admin_tests' %}">Reset</a>
+    </form>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Difficulty</th>
+            <th>Questions</th>
+            <th>Duration</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for test in tests %}
+            <tr>
+              <td>
+                <strong>{{ test.title }}</strong>
+                <small>{{ test.topics }}</small>
+              </td>
+              <td>{{ test.get_category_display }}</td>
+              <td>{{ test.get_difficulty_display }}</td>
+              <td>{{ test.question_count }}</td>
+              <td>{{ test.duration_minutes }} min</td>
+              <td>{% if test.is_active %}Active{% else %}Hidden{% endif %}</td>
+              <td class="table-actions">
+                <a class="btn btn-small btn-ghost" href="{% url 'site_admin_test_update' test.id %}">Edit</a>
+                <a class="btn btn-small btn-danger" href="{% url 'site_admin_test_delete' test.id %}">Delete</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7">No tests found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

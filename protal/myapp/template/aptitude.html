@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Aptitude Practice | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="page-title">
+      <div class="eyebrow">Aptitude practice</div>
+      <h1>Choose a 20-question aptitude test.</h1>
+      <p>Each level has a complete question set. After submission, PrepNova scores the test and updates your statistics and topic progress.</p>
+    </div>
+
+    <div class="grid four">
+      <div class="metric-card">
+        <span>Completed</span>
+        <strong>{{ tests_completed }}</strong>
+        <p>Aptitude tests finished</p>
+      </div>
+      <div class="metric-card">
+        <span>Average Score</span>
+        <strong>{{ average_score }}%</strong>
+        <p>Across completed attempts</p>
+      </div>
+      <div class="metric-card">
+        <span>Best Score</span>
+        <strong>{{ best_score }}%</strong>
+        <p>Your top aptitude score</p>
+      </div>
+      <div class="metric-card">
+        <span>Questions Solved</span>
+        <strong>{{ questions_solved }}</strong>
+        <p>Total submitted questions</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="section-heading">
+      <div>
+        <div class="eyebrow">Test levels</div>
+        <h2>Start with the right difficulty.</h2>
+      </div>
+      <p>Easy, Medium, and Hard tests each contain 20 scored questions from quantitative, reasoning, and data interpretation topics.</p>
+    </div>
+
+    <div class="grid three">
+      {% for test in tests %}
+        <article class="test-card">
+          <div class="badge-row">
+            <span class="badge {{ test.difficulty }}">{{ test.get_difficulty_display }}</span>
+            <span class="badge">{{ test.question_count }} questions</span>
+            <span class="badge">{{ test.duration_minutes }} min</span>
+          </div>
+          <h3>{{ test.title }}</h3>
+          <p>{{ test.topics }}</p>
+          <form method="post" action="{% url 'start_test' test.id %}">
+            {% csrf_token %}
+            <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Opening test...">Start {{ test.get_difficulty_display }} Test</button>
+          </form>
+        </article>
+      {% empty %}
+        <div class="empty-note">No aptitude tests are available yet.</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="split-layout">
+      <div class="panel">
+        <h2 class="panel-title">Topic Progress</h2>
+        <div class="progress-list">
+          {% for item in topic_progress %}
+            <div class="progress-item">
+              <div class="progress-meta">
+                <span>{{ item.topic }}</span>
+                <span>{{ item.score }}%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill {% cycle '' 'amber' 'rose' %}" data-progress="{{ item.score }}"></div>
+              </div>
+              <p class="progress-note">{{ item.correct }} correct out of {{ item.total }} answered</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <aside class="panel daily-challenge">
+        <span class="badge medium">Latest Analysis</span>
+        {% if latest_attempt %}
+          <h3>{{ latest_attempt.test.title }}</h3>
+          <p>You scored {{ latest_attempt.score }}% with {{ latest_attempt.correct_answers }} correct answers out of {{ latest_attempt.total_questions }}.</p>
+          <a class="btn btn-primary btn-wide" href="{% url 'aptitude_result' latest_attempt.id %}">View Analysis</a>
+        {% else %}
+          <h3>No completed test yet</h3>
+          <p>Complete any aptitude level to unlock score analysis and topic progress.</p>
+          <a class="btn btn-ghost btn-wide" href="{% url 'aptitude' %}">Pick a Test</a>
+        {% endif %}
+      </aside>
+    </div>
+  </section>
+{% endblock %}

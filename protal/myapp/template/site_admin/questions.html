@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Questions | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="admin-hero">
+      <div>
+        <div class="eyebrow">Question bank</div>
+        <h1>Modify aptitude questions.</h1>
+        <p>Edit the questions, answer choices, correct option, topic, and explanation used in aptitude tests.</p>
+      </div>
+      <a class="btn btn-primary" href="{% url 'site_admin_question_create' %}">Create Question</a>
+    </div>
+
+    <div class="admin-nav">
+      <a href="{% url 'site_admin_dashboard' %}">Overview</a>
+      <a href="{% url 'site_admin_tests' %}">Tests</a>
+      <a class="is-active" href="{% url 'site_admin_questions' %}">Aptitude Questions</a>
+      <a href="{% url 'site_admin_coding_questions' %}">Coding Questions</a>
+      <a href="/admin/">Django Admin</a>
+    </div>
+
+    <form class="admin-filter" method="get">
+      <label for="test">Filter by test</label>
+      <select id="test" name="test">
+        <option value="">All aptitude tests</option>
+        {% for test in tests %}
+          <option value="{{ test.id }}" {% if test_id == test.id|stringformat:"s" %}selected{% endif %}>{{ test.title }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-ghost" type="submit">Apply</button>
+      <a class="btn btn-ghost" href="{% url 'site_admin_questions' %}">Reset</a>
+    </form>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Test</th>
+            <th>Topic</th>
+            <th>Question</th>
+            <th>Answer</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for question in questions %}
+            <tr>
+              <td>Q{{ question.order }}</td>
+              <td>{{ question.test.title }}</td>
+              <td>{{ question.topic }}</td>
+              <td>{{ question.question_text|truncatechars:90 }}</td>
+              <td>{{ question.correct_option }}</td>
+              <td class="table-actions">
+                <a class="btn btn-small btn-ghost" href="{% url 'site_admin_question_update' question.id %}">Edit</a>
+                <a class="btn btn-small btn-danger" href="{% url 'site_admin_question_delete' question.id %}">Delete</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6">No questions found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

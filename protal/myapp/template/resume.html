@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Resume Builder | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="page-title">
+      <div class="eyebrow">Resume builder</div>
+      <h1>Create an ATS-friendly resume profile.</h1>
+      <p>Fill the form, preview the resume live, and save it to your account. Your dashboard score updates after saving.</p>
+    </div>
+
+    <div class="resume-builder">
+      <form class="form-panel" method="post" action="{% url 'resume' %}" data-resume-form>
+        {% csrf_token %}
+
+        <div class="form-section">
+          <h2>Personal Information</h2>
+          <div class="form-grid two">
+            <div class="field">
+              <label for="fullName">Full Name</label>
+              <input id="fullName" type="text" name="full_name" value="{{ resume.full_name|default:'' }}" placeholder="Your full name" required>
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" type="email" name="email" value="{{ resume.email|default:request.user.email }}" placeholder="student@example.com" required>
+            </div>
+            <div class="field">
+              <label for="phone">Phone</label>
+              <input id="phone" type="text" name="phone" value="{{ resume.phone|default:'' }}" placeholder="+91 98765 43210">
+            </div>
+            <div class="field">
+              <label for="location">Location</label>
+              <input id="location" type="text" name="location" value="{{ resume.location|default:'' }}" placeholder="City, Country">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="links">LinkedIn or GitHub</label>
+              <input id="links" type="text" name="links" value="{{ resume.links|default:'' }}" placeholder="github.com/username">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Summary and Skills</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label for="summary">Professional Summary</label>
+              <textarea id="summary" name="summary" placeholder="Briefly describe your strengths and target role.">{{ resume.summary|default:'' }}</textarea>
+            </div>
+            <div class="field">
+              <label for="skills">Technical Skills</label>
+              <input id="skills" type="text" name="skills" value="{{ resume.skills|default:'' }}" placeholder="Python, Django, SQL, DSA">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Projects and Experience</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label for="projects">Projects</label>
+              <textarea id="projects" name="projects" placeholder="Project name - what you built, tech used, and result.">{{ resume.projects|default:'' }}</textarea>
+            </div>
+            <div class="field">
+              <label for="experience">Experience</label>
+              <textarea id="experience" name="experience" placeholder="Internship or work experience with impact points.">{{ resume.experience|default:'' }}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Education</h2>
+          <div class="form-grid two">
+            <div class="field">
+              <label for="degree">Degree and University</label>
+              <input id="degree" type="text" name="degree" value="{{ resume.degree|default:'' }}" placeholder="B.E. CSE, University name">
+            </div>
+            <div class="field">
+              <label for="graduation">Graduation</label>
+              <input id="graduation" type="text" name="graduation" value="{{ resume.graduation|default:'' }}" placeholder="2026, CGPA 8.5">
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Saving...">Save Resume</button>
+      </form>
+
+      <aside class="preview-panel">
+        <div class="preview-head">
+          <div>
+            <div class="eyebrow">Live preview</div>
+            <h2 class="panel-title">Resume Preview</h2>
+          </div>
+          <div class="score-meter">
+            <strong data-resume-score>{{ resume.ats_score|default:0 }}%</strong>
+            <span>ATS score</span>
+          </div>
+        </div>
+        <div class="resume-preview empty" data-resume-preview>
+          <p>Fill in your details to preview the resume.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Site Admin | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="admin-hero">
+      <div>
+        <div class="eyebrow">Staff dashboard</div>
+        <h1>Manage PrepNova data.</h1>
+        <p>Update tests, aptitude questions, and review recent student activity from one protected admin area.</p>
+      </div>
+      <div class="result-actions">
+        <a class="btn btn-primary" href="{% url 'site_admin_test_create' %}">New Test</a>
+        <a class="btn btn-ghost" href="{% url 'site_admin_question_create' %}">New Question</a>
+      </div>
+    </div>
+
+    <div class="admin-nav">
+      <a class="is-active" href="{% url 'site_admin_dashboard' %}">Overview</a>
+      <a href="{% url 'site_admin_tests' %}">Tests</a>
+      <a href="{% url 'site_admin_questions' %}">Aptitude Questions</a>
+      <a href="{% url 'site_admin_coding_questions' %}">Coding Questions</a>
+      <a href="/admin/">Django Admin</a>
+    </div>
+
+    <div class="grid five">
+      <div class="metric-card">
+        <span>Users</span>
+        <strong>{{ stats.users }}</strong>
+        <p>Registered accounts</p>
+      </div>
+      <div class="metric-card">
+        <span>Tests</span>
+        <strong>{{ stats.tests }}</strong>
+        <p>Practice and mock tests</p>
+      </div>
+      <div class="metric-card">
+        <span>Questions</span>
+        <strong>{{ stats.questions }}</strong>
+        <p>Aptitude question bank</p>
+      </div>
+      <div class="metric-card">
+        <span>Attempts</span>
+        <strong>{{ stats.attempts }}</strong>
+        <p>Student test attempts</p>
+      </div>
+      <div class="metric-card">
+        <span>Resumes</span>
+        <strong>{{ stats.resumes }}</strong>
+        <p>Saved resume profiles</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="split-layout">
+      <div class="panel">
+        <h2 class="panel-title">Recent Attempts</h2>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Test</th>
+                <th>Status</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for attempt in recent_attempts %}
+                <tr>
+                  <td>{{ attempt.user.username }}</td>
+                  <td>{{ attempt.test.title }}</td>
+                  <td>{{ attempt.get_status_display }}</td>
+                  <td>{{ attempt.score }}%</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4">No attempts yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-title">Latest Questions</h2>
+        <div class="admin-list">
+          {% for question in recent_questions %}
+            <a href="{% url 'site_admin_question_update' question.id %}">
+              <span>{{ question.test.title }} Q{{ question.order }}</span>
+              <small>{{ question.topic }}</small>
+            </a>
+          {% empty %}
+            <p class="progress-note">No questions yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

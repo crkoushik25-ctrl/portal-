@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login | PrepNova{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<section class="auth-shell admin-login-shell">
+  <div class="auth-intro">
+    <div class="eyebrow">Superuser access</div>
+    <h1>Admin login for PrepNova.</h1>
+    <p>Use your Django superuser credentials to manage tests, aptitude questions, and website data.</p>
+    <div class="hero-actions">
+      <a class="btn btn-ghost" href="{% url 'first' %}">Back to Website</a>
+    </div>
+  </div>
+
+  <form class="auth-card admin-login-card" method="post" action="{% url 'site_admin_login' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+
+    <div class="admin-login-head">
+      <span class="brand-mark">AD</span>
+      <div>
+        <h2>Superuser Sign In</h2>
+        <p>Only superuser accounts can continue.</p>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="adminUsername">Username or Email</label>
+      <input id="adminUsername" type="text" name="username" placeholder="admin@example.com" required autofocus>
+    </div>
+
+    <div class="field">
+      <label for="adminPassword">Password</label>
+      <input id="adminPassword" type="password" name="password" placeholder="Enter superuser password" required>
+    </div>
+
+    <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Checking...">Login to Admin</button>
+
+    <p class="progress-note">Contact <strong>Admin For Login ID</strong>.</p>
+  </form>
+</section>
+{% endblock %}

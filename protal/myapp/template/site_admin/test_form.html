@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="page-title compact-title">
+      <div class="eyebrow">Admin form</div>
+      <h1>{{ title }}</h1>
+      <p>Changes here update the tests shown on aptitude, coding, mock test, and dashboard pages.</p>
+    </div>
+
+    <div class="admin-form-layout">
+      <form class="form-panel admin-form" method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+          <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}
+              <span class="field-error">{{ error }}</span>
+            {% endfor %}
+          </div>
+        {% endfor %}
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Save Test</button>
+          <a class="btn btn-ghost" href="{% url 'site_admin_tests' %}">Cancel</a>
+        </div>
+      </form>
+
+      <aside class="panel">
+        <h2 class="panel-title">Tip</h2>
+        <p class="analysis-copy">For aptitude tests, question count is synchronized from the question bank when questions are added or removed.</p>
+        {% if test.category == 'CODING' %}
+          <a class="btn btn-ghost btn-wide" href="{% url 'site_admin_coding_questions' %}?test={{ test.id }}">Manage Questions</a>
+        {% else %}
+          <a class="btn btn-ghost btn-wide" href="{% url 'site_admin_questions' %}?test={{ test.id }}">Manage Questions</a>
+        {% endif %}
+      </aside>
+    </div>
+  </section>
+{% endblock %}

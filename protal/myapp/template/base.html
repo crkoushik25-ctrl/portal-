@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PrepNova{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'index.css' %}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <header class="site-header">
+    <nav class="nav-shell" aria-label="Primary navigation">
+      <a class="brand" href="{% url 'first' %}" aria-label="PrepNova home">
+        <span class="brand-mark">PN</span>
+        <span>PrepNova</span>
+      </a>
+
+      <button class="nav-toggle" type="button" aria-controls="primaryNav" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="nav-links" id="primaryNav">
+        <a href="{% url 'first' %}" class="{% if request.resolver_match.url_name == 'first' %}is-active{% endif %}">Home</a>
+        <a href="{% url 'aptitude' %}" class="{% if request.resolver_match.url_name == 'aptitude' %}is-active{% endif %}">Aptitude</a>
+        <a href="{% url 'coding' %}" class="{% if request.resolver_match.url_name == 'coding' %}is-active{% endif %}">Coding</a>
+        <a href="{% url 'mocktest' %}" class="{% if request.resolver_match.url_name == 'mocktest' %}is-active{% endif %}">Mock Tests</a>
+        <a href="{% url 'resume' %}" class="{% if request.resolver_match.url_name == 'resume' %}is-active{% endif %}">Resume</a>
+        <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}">Dashboard</a>
+        {% if request.user.is_superuser %}
+          <a href="{% url 'site_admin_dashboard' %}" class="{% if 'site_admin' in request.resolver_match.url_name %}is-active{% endif %}">Admin</a>
+        {% endif %}
+      </div>
+
+      <div class="nav-actions">
+        {% if request.user.is_authenticated %}
+          <a class="btn btn-ghost" href="{% url 'dashboard' %}">{{ request.user.first_name|default:request.user.username|truncatechars:16 }}</a>
+          {% if request.user.is_superuser %}
+            <a class="btn btn-ghost admin-btn" href="{% url 'site_admin_dashboard' %}" title="Admin Panel">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Admin
+            </a>
+          {% endif %}
+          <a class="btn btn-primary" href="{% url 'logout' %}">Logout</a>
+        {% else %}
+          <a class="btn btn-ghost admin-btn" href="{% url 'site_admin_login' %}" title="Superuser Sign In">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Superuser
+          </a>
+          <a class="btn btn-primary" href="{% url 'login' %}">Login</a>
+        {% endif %}
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    {% if messages %}
+      <div class="flash-stack" aria-live="polite">
+        {% for message in messages %}
+          <div class="flash {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div>
+      <a class="brand compact" href="{% url 'first' %}">
+        <span class="brand-mark">PN</span>
+        <span>PrepNova</span>
+      </a>
+      <p>Placement preparation with focused tests, coding practice, resume scoring, and progress tracking.</p>
+    </div>
+    <div class="footer-links">
+      <a href="{% url 'aptitude' %}">Aptitude</a>
+      <a href="{% url 'coding' %}">Coding</a>
+      <a href="{% url 'mocktest' %}">Mock Tests</a>
+      <a href="{% url 'resume' %}">Resume</a>
+    </div>
+    <p class="copyright">Copyright 2026 PrepNova. All rights reserved.</p>
+  </footer>
+
+  <script src="{% static 'index.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

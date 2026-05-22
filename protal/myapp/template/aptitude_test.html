@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ test.title }} | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="page-title compact-title">
+      <div class="eyebrow">{{ test.get_difficulty_display }} aptitude test</div>
+      <h1>{{ test.title }}</h1>
+      <p>{{ test.question_count }} questions, {{ test.duration_minutes }} minutes. Select one answer for every question and submit when ready.</p>
+    </div>
+
+    <form class="quiz-layout" method="post" action="{% url 'take_aptitude_test' attempt.id %}">
+      {% csrf_token %}
+
+      <div class="question-list">
+        {% for question in questions %}
+          <article class="question-card">
+            <div class="question-meta">
+              <span>Question {{ forloop.counter }}</span>
+              <span>{{ question.topic }}</span>
+            </div>
+            <h2>{{ question.question_text }}</h2>
+
+            <div class="option-grid">
+              <label class="option-choice">
+                <input type="radio" name="question_{{ question.id }}" value="A" required>
+                <span>A</span>
+                {{ question.option_a }}
+              </label>
+              <label class="option-choice">
+                <input type="radio" name="question_{{ question.id }}" value="B" required>
+                <span>B</span>
+                {{ question.option_b }}
+              </label>
+              <label class="option-choice">
+                <input type="radio" name="question_{{ question.id }}" value="C" required>
+                <span>C</span>
+                {{ question.option_c }}
+              </label>
+              <label class="option-choice">
+                <input type="radio" name="question_{{ question.id }}" value="D" required>
+                <span>D</span>
+                {{ question.option_d }}
+              </label>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+
+      <aside class="quiz-sidebar">
+        <div class="panel">
+          <span class="badge {{ test.difficulty }}">{{ test.get_difficulty_display }}</span>
+          <h2 class="panel-title">Submit Test</h2>
+          <p>Answer all 20 questions. Your score, topic analysis, and aptitude statistics update immediately after submission.</p>
+          <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Scoring...">Submit Answers</button>
+          <a class="btn btn-ghost btn-wide" href="{% url 'aptitude' %}">Back to Aptitude</a>
+        </div>
+      </aside>
+    </form>
+  </section>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="dashboard-shell">
+    <div class="dashboard-top">
+      <div>
+        <div class="eyebrow">Student dashboard</div>
+        <h1>Welcome, {{ request.user.first_name|default:request.user.username }}.</h1>
+        <p>Track tests, average scores, resume completion, and recent activity.</p>
+      </div>
+      <a class="btn btn-primary" href="{% url 'getstarted' %}">Continue Practice</a>
+    </div>
+
+    <div class="grid four">
+      <div class="metric-card">
+        <span>Tests Completed</span>
+        <strong>{{ completed_tests }}</strong>
+        <p>Total recorded attempts</p>
+      </div>
+      <div class="metric-card">
+        <span>Average Score</span>
+        <strong>{{ average_score }}%</strong>
+        <p>Overall test average</p>
+      </div>
+      <div class="metric-card">
+        <span>Coding Score</span>
+        <strong>{{ coding_score }}%</strong>
+        <p>Coding test performance</p>
+      </div>
+      <div class="metric-card">
+        <span>Resume Score</span>
+        <strong>{{ resume_score }}%</strong>
+        <p>ATS completion score</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="split-layout">
+      <div class="activity-panel">
+        <h2 class="panel-title">Recent Activity</h2>
+        <div class="activity-list">
+          {% for activity in activities %}
+            <div class="activity-item">
+              <p>{{ activity.title }}</p>
+              <span>{{ activity.status }}</span>
+            </div>
+          {% empty %}
+            <div class="activity-item">
+              <p>No activity yet. Start a test or save your resume.</p>
+              <span>New</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <aside class="panel">
+        <h2 class="panel-title">Next Steps</h2>
+        <div class="progress-list">
+          <div class="progress-item">
+            <div class="progress-meta"><span>Resume</span><span>{{ resume_score|default:0 }}%</span></div>
+            <div class="progress-track"><div class="progress-fill" data-progress="{{ resume_score|default:0 }}"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-meta"><span>Coding</span><span>{{ coding_score|default:0 }}%</span></div>
+            <div class="progress-track"><div class="progress-fill amber" data-progress="{{ coding_score|default:0 }}"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-meta"><span>Mock Tests</span><span>{{ mock_score|default:0 }}%</span></div>
+            <div class="progress-track"><div class="progress-fill rose" data-progress="{{ mock_score|default:0 }}"></div></div>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <a class="btn btn-ghost" href="{% url 'resume' %}">Update Resume</a>
+          <a class="btn btn-primary" href="{% url 'mocktest' %}">Start Mock</a>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="panel">
+      <h2 class="panel-title">Coding Performance Overview</h2>
+      <div class="split-layout">
+        <div>
+          <h3>Problems Solved by Difficulty</h3>
+          <div class="progress-list" style="margin-top: 1rem;">
+            <div class="progress-item">
+              <div class="progress-meta"><span>Easy ({{ coding_stats.easy_solved|default:0 }}/{{ coding_stats.easy_total|default:0 }})</span><span>{{ coding_stats.easy_percent|default:0 }}%</span></div>
+              <div class="progress-track"><div class="progress-fill" data-progress="{{ coding_stats.easy_percent|default:0 }}"></div></div>
+            </div>
+            <div class="progress-item">
+              <div class="progress-meta"><span>Medium ({{ coding_stats.medium_solved|default:0 }}/{{ coding_stats.medium_total|default:0 }})</span><span>{{ coding_stats.medium_percent|default:0 }}%</span></div>
+              <div class="progress-track"><div class="progress-fill amber" data-progress="{{ coding_stats.medium_percent|default:0 }}"></div></div>
+            </div>
+            <div class="progress-item">
+              <div class="progress-meta"><span>Hard ({{ coding_stats.hard_solved|default:0 }}/{{ coding_stats.hard_total|default:0 }})</span><span>{{ coding_stats.hard_percent|default:0 }}%</span></div>
+              <div class="progress-track"><div class="progress-fill rose" data-progress="{{ coding_stats.hard_percent|default:0 }}"></div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3>Programming Languages Used</h3>
+          {% if coding_stats.languages %}
+            <div class="progress-list" style="margin-top: 1rem;">
+              {% for lang in coding_stats.languages %}
+                <div class="progress-item">
+                  <div class="progress-meta"><span>{{ lang.name }} ({{ lang.count }} submissions)</span><span>{{ lang.percent }}%</span></div>
+                  <div class="progress-track"><div class="progress-fill" style="width: {{ lang.percent }}%; background: linear-gradient(135deg, #10b981 0%, #059669 100%);"></div></div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p style="margin-top: 1rem; color: var(--text-muted);">No coding questions solved yet. Start practicing to see language breakdown!</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

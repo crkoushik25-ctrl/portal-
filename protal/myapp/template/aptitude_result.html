@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Aptitude Result | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="result-hero">
+      <div>
+        <div class="eyebrow">Test analysis</div>
+        <h1>{{ attempt.score }}%</h1>
+        <p>{{ attempt.test.title }} completed with {{ attempt.correct_answers }} correct answers out of {{ attempt.total_questions }}.</p>
+      </div>
+      <div class="result-actions">
+        <a class="btn btn-primary" href="{% url 'aptitude' %}">Back to Aptitude</a>
+        <form method="post" action="{% url 'start_test' attempt.test.id %}">
+          {% csrf_token %}
+          <button class="btn btn-ghost" type="submit">Retake Test</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="grid three">
+      <div class="metric-card">
+        <span>Correct</span>
+        <strong>{{ attempt.correct_answers }}</strong>
+        <p>Questions answered correctly</p>
+      </div>
+      <div class="metric-card">
+        <span>Incorrect</span>
+        <strong>{{ incorrect_answers }}</strong>
+        <p>Questions to review</p>
+      </div>
+      <div class="metric-card">
+        <span>Difficulty</span>
+        <strong>{{ attempt.test.get_difficulty_display }}</strong>
+        <p>{{ attempt.test.duration_minutes }} minute test</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="split-layout">
+      <div class="panel">
+        <h2 class="panel-title">Topic Breakdown</h2>
+        <div class="progress-list">
+          {% for item in topic_breakdown %}
+            <div class="progress-item">
+              <div class="progress-meta">
+                <span>{{ item.topic }}</span>
+                <span>{{ item.score }}%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill {% cycle '' 'amber' 'rose' %}" data-progress="{{ item.score }}"></div>
+              </div>
+              <p class="progress-note">{{ item.correct }} correct out of {{ item.total }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <aside class="panel">
+        <h2 class="panel-title">Analysis</h2>
+        {% if strengths %}
+          <p class="analysis-copy">Strong areas:
+            {% for item in strengths %}
+              <strong>{{ item.topic }}</strong>{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </p>
+        {% else %}
+          <p class="analysis-copy">No topic crossed 75% yet. Retake after reviewing explanations.</p>
+        {% endif %}
+
+        {% if focus_areas %}
+          <p class="analysis-copy">Focus next on:
+            {% for item in focus_areas %}
+              <strong>{{ item.topic }}</strong>{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </p>
+        {% else %}
+          <p class="analysis-copy">Nice balance. No topic is below 60% in this attempt.</p>
+        {% endif %}
+      </aside>
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="section-heading">
+      <div>
+        <div class="eyebrow">Review answers</div>
+        <h2>Question-by-question feedback.</h2>
+      </div>
+      <p>Use the explanations to understand mistakes before retaking the level.</p>
+    </div>
+
+    <div class="review-list">
+      {% for answer in answers %}
+        <article class="review-card {% if answer.is_correct %}is-correct{% else %}is-wrong{% endif %}">
+          <div class="question-meta">
+            <span>Question {{ forloop.counter }}</span>
+            <span>{{ answer.question.topic }}</span>
+          </div>
+          <h3>{{ answer.question.question_text }}</h3>
+          <p>Your answer: <strong>{{ answer.selected_option|default:"-" }}. {{ answer.selected_text }}</strong></p>
+          <p>Correct answer: <strong>{{ answer.question.correct_option }}. {{ answer.correct_text }}</strong></p>
+          <p>{{ answer.question.explanation }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

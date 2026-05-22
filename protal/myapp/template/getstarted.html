@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Get Started | PrepNova{% endblock %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="page-title">
+      <div class="eyebrow">Learning paths</div>
+      <h1>Start with the area that matters most today.</h1>
+      <p>Pick a focused path and jump straight into practice. You can return here anytime from the home page.</p>
+    </div>
+
+    <div class="grid three">
+      <a class="path-card" href="{% url 'aptitude' %}">
+        <span class="icon-tile">01</span>
+        <div>
+          <h3>Aptitude Mastery</h3>
+          <p>Practice numbers, reasoning, data interpretation, and verbal topics.</p>
+        </div>
+      </a>
+      <a class="path-card" href="{% url 'coding' %}">
+        <span class="icon-tile green">02</span>
+        <div>
+          <h3>Coding Practice</h3>
+          <p>Improve problem solving with structured daily coding challenges.</p>
+        </div>
+      </a>
+      <a class="path-card" href="{% url 'mocktest' %}">
+        <span class="icon-tile amber">03</span>
+        <div>
+          <h3>Mock Tests</h3>
+          <p>Simulate placement rounds and track your preparation progress.</p>
+        </div>
+      </a>
+      <a class="path-card" href="{% url 'resume' %}">
+        <span class="icon-tile rose">04</span>
+        <div>
+          <h3>Resume Builder</h3>
+          <p>Save your resume details and get a simple ATS completion score.</p>
+        </div>
+      </a>
+      <a class="path-card" href="{% url 'dashboard' %}">
+        <span class="icon-tile">05</span>
+        <div>
+          <h3>Dashboard</h3>
+          <p>Review attempts, average scores, resume score, and recent activity.</p>
+        </div>
+      </a>
+      <a class="path-card" href="{% url 'login' %}">
+        <span class="icon-tile green">06</span>
+        <div>
+          <h3>Create Account</h3>
+          <p>Register or sign in so your attempts and resume can be saved.</p>
+        </div>
+      </a>
+    </div>
+  </section>
+{% endblock %}

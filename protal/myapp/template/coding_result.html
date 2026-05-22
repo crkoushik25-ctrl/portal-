@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Coding Test Result | PrepNova{% endblock %}
+
+{% block content %}
+<style>
+  .result-header {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(var(--primary-rgb), 0.1);
+    border: 4px solid var(--primary-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 1.5rem auto;
+  }
+
+  .score-circle strong {
+    font-size: 2.25rem;
+    color: var(--text-heading);
+    line-height: 1;
+  }
+
+  .score-circle span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .question-result-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .result-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.75rem;
+  }
+
+  .status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .status-badge.passed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+  .status-badge.failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+  .status-badge.compile_error { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+  .status-badge.no_submission { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+  .code-block {
+    background: #090c15;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #e2e8f0;
+    overflow-x: auto;
+    max-height: 300px;
+    white-space: pre;
+    margin-top: 1rem;
+  }
+
+  .feedback-box {
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px dashed rgba(59, 130, 246, 0.3);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-top: 2rem;
+  }
+</style>
+
+<section class="page-shell">
+  <div class="result-header">
+    <span class="eyebrow">Exam completed</span>
+    <h1>{{ test.title }}</h1>
+    <p>Completed on {{ attempt.completed_at|date:"F j, Y, g:i a" }}</p>
+
+    <div class="score-circle">
+      <strong>{{ attempt.score }}%</strong>
+      <span>Overall Score</span>
+    </div>
+
+    <p style="max-width: 500px; margin: 0 auto; color: var(--text-muted);">
+      You solved <strong>{{ attempt.correct_answers }}</strong> out of <strong>{{ attempt.total_questions }}</strong> coding questions correctly.
+    </p>
+
+    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+      <a class="btn btn-primary" href="{% url 'coding' %}">Back to Challenges</a>
+      <a class="btn btn-ghost" href="{% url 'dashboard' %}">Go to Dashboard</a>
+    </div>
+  </div>
+
+  <h2 style="margin-bottom: 1.5rem; color: var(--text-heading);">Detailed Question Analysis</h2>
+
+  {% for item in q_results %}
+    <div class="question-result-card">
+      <div class="result-meta-row">
+        <div>
+          <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Question {{ forloop.counter }}</span>
+          <h3 style="margin: 0.25rem 0 0 0; color: var(--text-heading);">{{ item.question.title }}</h3>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <span class="difficulty-badge {{ item.question.difficulty }}">{{ item.question.get_difficulty_display }}</span>
+          
+          {% if item.submission %}
+            {% if item.submission.status == 'Passed' %}
+              <span class="status-badge passed">Passed</span>
+            {% elif item.submission.status == 'Compile Error' %}
+              <span class="status-badge compile_error">Compile Error</span>
+            {% else %}
+              <span class="status-badge failed">{{ item.submission.status }}</span>
+            {% endif %}
+          {% else %}
+            <span class="status-badge no_submission">No Submission</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+        <div>
+          <h4 style="margin: 0 0 0.5rem 0; color: var(--text-heading);">Problem Stat</h4>
+          <p style="font-size: 0.9rem; color: var(--text-body); margin: 0.25rem 0;">
+            <strong>Test Cases Passed:</strong> 
+            {% if item.submission %}
+              {{ item.submission.passed_cases }} / {{ item.submission.total_cases }}
+            {% else %}
+              0 / {{ item.question.test_cases|length }}
+            {% endif %}
+          </p>
+          <p style="font-size: 0.9rem; color: var(--text-body); margin: 0.25rem 0;">
+            <strong>Language:</strong> 
+            {% if item.submission %}
+              {{ item.submission.language|title }}
+            {% else %}
+              N/A
+            {% endif %}
+          </p>
+        </div>
+        <div>
+          <h4 style="margin: 0 0 0.5rem 0; color: var(--text-heading);">Quick Description</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            {{ item.question.description|striptags|truncatewords:25 }}
+          </p>
+        </div>
+      </div>
+
+      {% if item.submission %}
+        <div style="margin-top: 1.25rem;">
+          <h4 style="margin-bottom: 0.25rem; color: var(--text-heading);">Submitted Code</h4>
+          <pre class="code-block"><code>{{ item.submission.code }}</code></pre>
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  <div class="feedback-box">
+    <h3 style="margin-top: 0; color: var(--text-heading);">Performance Feedback & Recommendations</h3>
+    {% if attempt.score >= 80 %}
+      <p style="color: var(--text-body); font-size: 0.95rem; line-height: 1.6; margin: 0.5rem 0 0 0;">
+        Excellent work! You have shown a strong grasp of data structures, algorithm design, and syntax constructs. Keep tackling hard-rated dynamic programming and optimization problems to maintain your competitive edge.
+      </p>
+    {% elif attempt.score >= 50 %}
+      <p style="color: var(--text-body); font-size: 0.95rem; line-height: 1.6; margin: 0.5rem 0 0 0;">
+        Good effort. You solved some challenges successfully but struggled on others (likely due to edge cases or complex runtime bounds). Focus on studying sorting, binary search patterns, and stack-based parsing to improve.
+      </p>
+    {% else %}
+      <p style="color: var(--text-body); font-size: 0.95rem; line-height: 1.6; margin: 0.5rem 0 0 0;">
+        Consider reviewing core programming fundamentals. Practice simple string operations, loops, dictionary lookups, and basic debugging to build confidence before retaking this programming exam.
+      </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

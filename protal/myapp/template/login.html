@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Login | PrepNova{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+  <section class="auth-shell">
+    <div class="auth-intro">
+      <div class="eyebrow">Student account</div>
+      <h1>Sign in to save your preparation progress.</h1>
+      <p>
+        Your tests, dashboard activity, and resume details are stored only when you are logged in.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-ghost" href="{% url 'getstarted' %}">Explore Paths</a>
+      </div>
+    </div>
+
+    <div class="auth-card" data-auth-card>
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab is-active" type="button" data-auth-tab="login">Login</button>
+        <button class="auth-tab" type="button" data-auth-tab="register">Register</button>
+      </div>
+
+      <div class="auth-forms">
+        <form class="auth-form is-active" method="post" action="{% url 'login' %}" data-auth-form="login">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="login">
+
+          <div class="field">
+            <label for="loginEmail">Email</label>
+            <input id="loginEmail" type="email" name="email" placeholder="student@example.com" required>
+          </div>
+
+          <div class="field">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" name="password" placeholder="Enter your password" required>
+          </div>
+
+          <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Logging in...">Login</button>
+        </form>
+
+        <form class="auth-form" method="post" action="{% url 'login' %}" data-auth-form="register">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="register">
+
+          <div class="field">
+            <label for="registerName">Full Name</label>
+            <input id="registerName" type="text" name="name" placeholder="Your name" required>
+          </div>
+
+          <div class="field">
+            <label for="registerEmail">Email</label>
+            <input id="registerEmail" type="email" name="email" placeholder="student@example.com" required>
+          </div>
+
+          <div class="field">
+            <label for="registerPassword">Password</label>
+            <input id="registerPassword" type="password" name="password" placeholder="Create a password" required>
+          </div>
+
+          <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Creating account...">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </section>
+{% endblock %}

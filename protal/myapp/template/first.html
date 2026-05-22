@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}PrepNova | Placement Preparation{% endblock %}
+
+{% block content %}
+  <section class="hero-shell">
+    <div class="hero-copy">
+      <div class="eyebrow">Placement prep workspace</div>
+      <h1>PrepNova helps you practice, measure, and improve.</h1>
+      <p>
+        Work through aptitude sets, coding challenges, mock tests, and a resume builder from one clean Django application.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{% url 'getstarted' %}">Get Started</a>
+        <a class="btn btn-ghost" href="{% url 'mocktest' %}">Take Mock Test</a>
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-label="PrepNova practice dashboard preview">
+      <div class="visual-topbar">
+        <span class="visual-dot"></span>
+        <span class="visual-dot"></span>
+        <span class="visual-dot"></span>
+      </div>
+      <div class="visual-body">
+        <div class="score-strip">
+          <div class="mini-score">
+            <strong>87%</strong>
+            <span>Aptitude</span>
+          </div>
+          <div class="mini-score">
+            <strong>42</strong>
+            <span>Problems</span>
+          </div>
+          <div class="mini-score">
+            <strong>91%</strong>
+            <span>Resume</span>
+          </div>
+        </div>
+        <div class="mock-editor">
+          <div class="code-window">
+            <div class="code-line accent"></div>
+            <div class="code-line medium"></div>
+            <div class="code-line short"></div>
+            <div class="code-line"></div>
+            <div class="code-line accent"></div>
+            <div class="code-line short"></div>
+          </div>
+          <div class="task-list">
+            <div class="task-item"><span>Arrays</span><span class="task-pill">Live</span></div>
+            <div class="task-item"><span>Percentages</span><span>12 min</span></div>
+            <div class="task-item"><span>Resume ATS</span><span>91%</span></div>
+            <div class="task-item"><span>Mock Test</span><span>Ready</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-shell">
+    <div class="section-heading">
+      <div>
+        <div class="eyebrow">Practice areas</div>
+        <h2>Choose the skill you want to sharpen today.</h2>
+      </div>
+      <p>Each section is connected to a Django route, so every navigation link opens a working page.</p>
+    </div>
+
+    <div class="grid three">
+      <a class="path-card" href="{% url 'aptitude' %}">
+        <span class="icon-tile">A</span>
+        <div>
+          <h3>Aptitude Practice</h3>
+          <p>Quantitative, reasoning, and verbal preparation with timed tests.</p>
+        </div>
+      </a>
+      <a class="path-card" href="{% url 'coding' %}">
+        <span class="icon-tile green">C</span>
+        <div>
+          <h3>Coding Challenges</h3>
+          <p>Build programming confidence with DSA and logic practice.</p>
+        </div>
+      </a>
+      <a class="path-card" href="{% url 'resume' %}">
+        <span class="icon-tile amber">R</span>
+        <div>
+          <h3>Resume Builder</h3>
+          <p>Create an ATS-friendly resume and preview it as you type.</p>
+        </div>
+      </a>
+    </div>
+  </section>
+{% endblock %}
