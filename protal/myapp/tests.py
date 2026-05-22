@@ -53,8 +53,9 @@ class PageBackendTests(TestCase):
         test = PrepTest.objects.filter(category=PrepTest.MOCK).first()
 
         response = self.client.post(reverse('start_test', args=[test.id]))
+        attempt = TestAttempt.objects.get(user=self.user, test=test)
 
-        self.assertRedirects(response, reverse('mocktest'))
+        self.assertRedirects(response, reverse('take_aptitude_test', args=[attempt.id]))
         self.assertTrue(TestAttempt.objects.filter(user=self.user, test=test).exists())
 
     def test_default_aptitude_tests_have_twenty_questions(self):
@@ -184,3 +185,52 @@ class SiteAdminTests(TestCase):
         self.assertEqual(test.question_count, 25)
 
 # Create your tests here.
+class MockTestRoundsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='student@example.com',
+            email='student@example.com',
+            password='StrongPass123',
+            first_name='Student',
+        )
+        ensure_default_tests()
+        self.aptitude_mock = PrepTest.objects.get(title='Aptitude Test', category=PrepTest.MOCK)
+        self.coding_mock = PrepTest.objects.get(title='Coding Test', category=PrepTest.MOCK)
+        self.interview_mock = PrepTest.objects.get(title='Technical Interview', category=PrepTest.MOCK)
+
+    def test_mock_test_rounds_locked_by_default_in_view(self):
+        self.client.login(username='student@example.com', password='StrongPass123')
+        response = self.client.get(reverse('mocktest'))
+        
+        tests = response.context['tests']
+        apt_info = next(t for t in tests if t['title'] == 'Aptitude Test')
+        coding_info = next(t for t in tests if t['title'] == 'Coding Test')
+        interview_info = next(t for t in tests if t['title'] == 'Technical Interview')
+
+        self.assertFalse(apt_info['is_locked'])
+        self.assertTrue(coding_info['is_locked'])
+        self.assertTrue(interview_info['is_locked'])
+
+    def test_start_locked_coding_test_fails(self):
+        self.client.login(username='student@example.com', password='StrongPass123')
+        response = self.client.post(reverse('start_test', args=[self.coding_mock.id]))
+        self.assertRedirects(response, reverse('mocktest'))
+        self.assertFalse(TestAttempt.objects.filter(user=self.user, test=self.coding_mock).exists())
+
+    def test_passing_aptitude_unlocks_coding(self):
+        self.client.login(username='student@example.com', password='StrongPass123')
+        TestAttempt.objects.create(
+            user=self.user,
+            test=self.aptitude_mock,
+            score=75,
+            status=TestAttempt.COMPLETED
+        )
+
+        response = self.client.get(reverse('mocktest'))
+        tests = response.context['tests']
+        coding_info = next(t for t in tests if t['title'] == 'Coding Test')
+        self.assertFalse(coding_info['is_locked'])
+
+        response = self.client.post(reverse('start_test', args=[self.coding_mock.id]))
+        attempt = TestAttempt.objects.get(user=self.user, test=self.coding_mock)
+        self.assertRedirects(response, reverse('take_coding_test', args=[attempt.id]))

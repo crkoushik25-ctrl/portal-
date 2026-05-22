@@ -4,6 +4,158 @@
 {% block body_class %}auth-page{% endblock %}
 
 {% block content %}
+<style>
+  /* Password field wrapper */
+  .pw-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .pw-wrapper input {
+    width: 100%;
+    padding-right: 2.75rem !important;
+  }
+
+  .pw-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+  }
+
+  .pw-toggle:hover {
+    color: var(--text-heading);
+  }
+
+  /* Forgot password link */
+  .forgot-link {
+    display: block;
+    text-align: right;
+    font-size: 0.82rem;
+    color: var(--primary-color);
+    margin-top: 0.3rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+  .forgot-link:hover { opacity: 0.75; text-decoration: underline; }
+
+  /* ── Forgot-password modal ── */
+  .fp-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+  }
+  .fp-backdrop.open { display: flex; }
+
+  .fp-modal {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    width: min(420px, 90vw);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    position: relative;
+    animation: fpSlideIn 0.25s ease;
+  }
+
+  @keyframes fpSlideIn {
+    from { opacity: 0; transform: translateY(-16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  }
+
+  .fp-modal h3 {
+    margin: 0 0 0.35rem;
+    color: var(--text-heading);
+    font-size: 1.25rem;
+  }
+
+  .fp-modal p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0 0 1.25rem;
+    line-height: 1.5;
+  }
+
+  .fp-close {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: none; border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .fp-close:hover { color: var(--text-heading); }
+
+  .fp-input {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-body);
+    font-size: 0.95rem;
+    outline: none;
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+  .fp-input:focus { border-color: var(--primary-color); }
+
+  .fp-result {
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .fp-result.success {
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: #10b981;
+    display: block;
+  }
+  .fp-result.error {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #ef4444;
+    display: block;
+  }
+
+  .fp-temp-pw {
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    background: rgba(16,185,129,0.15);
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    display: inline-block;
+    margin-top: 0.4rem;
+    user-select: all;
+    cursor: text;
+  }
+</style>
+
   <section class="auth-shell">
     <div class="auth-intro">
       <div class="eyebrow">Student account</div>
@@ -23,6 +175,7 @@
       </div>
 
       <div class="auth-forms">
+        <!-- ── LOGIN FORM ── -->
         <form class="auth-form is-active" method="post" action="{% url 'login' %}" data-auth-form="login">
           {% csrf_token %}
           <input type="hidden" name="form_type" value="login">
@@ -34,12 +187,19 @@
 
           <div class="field">
             <label for="loginPassword">Password</label>
-            <input id="loginPassword" type="password" name="password" placeholder="Enter your password" required>
+            <div class="pw-wrapper">
+              <input id="loginPassword" type="password" name="password" placeholder="Enter your password" required>
+              <button type="button" class="pw-toggle" onclick="togglePw('loginPassword', this)" aria-label="Show/hide password">
+                <svg id="loginPassword-eye" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <button type="button" class="forgot-link" onclick="openForgotModal()">Forgot password?</button>
           </div>
 
           <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Logging in...">Login</button>
         </form>
 
+        <!-- ── REGISTER FORM ── -->
         <form class="auth-form" method="post" action="{% url 'login' %}" data-auth-form="register">
           {% csrf_token %}
           <input type="hidden" name="form_type" value="register">
@@ -56,7 +216,12 @@
 
           <div class="field">
             <label for="registerPassword">Password</label>
-            <input id="registerPassword" type="password" name="password" placeholder="Create a password" required>
+            <div class="pw-wrapper">
+              <input id="registerPassword" type="password" name="password" placeholder="Create a password" required>
+              <button type="button" class="pw-toggle" onclick="togglePw('registerPassword', this)" aria-label="Show/hide password">
+                <svg id="registerPassword-eye" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
           </div>
 
           <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Creating account...">Create Account</button>
@@ -64,4 +229,102 @@
       </div>
     </div>
   </section>
+
+<!-- ── FORGOT PASSWORD MODAL ── -->
+<div class="fp-backdrop" id="fpBackdrop" onclick="closeForgotModalOnBackdrop(event)">
+  <div class="fp-modal" role="dialog" aria-modal="true" aria-labelledby="fpTitle">
+    <button class="fp-close" onclick="closeForgotModal()" aria-label="Close">&times;</button>
+    <h3 id="fpTitle">Forgot your password?</h3>
+    <p>Enter your registered email address. We'll generate a temporary password you can use to sign in and change later.</p>
+
+    <input type="email" id="fpEmail" class="fp-input" placeholder="student@example.com" autocomplete="email">
+
+    <button class="btn btn-primary btn-wide" id="fpSubmitBtn" onclick="submitForgotPassword()">Reset Password</button>
+
+    <div class="fp-result" id="fpResult"></div>
+  </div>
+</div>
+
+<script>
+  // ── Eye toggle ──────────────────────────────────
+  function togglePw(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+
+    // Swap icon: eye / eye-off
+    btn.querySelector('svg').innerHTML = isHidden
+      ? /* eye-off */
+        '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : /* eye */
+        '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+
+  // ── Forgot password modal ──────────────────────
+  function openForgotModal() {
+    document.getElementById('fpBackdrop').classList.add('open');
+    document.getElementById('fpEmail').value = '';
+    document.getElementById('fpResult').className = 'fp-result';
+    document.getElementById('fpResult').innerHTML = '';
+    document.getElementById('fpSubmitBtn').disabled = false;
+    document.getElementById('fpSubmitBtn').textContent = 'Reset Password';
+    setTimeout(() => document.getElementById('fpEmail').focus(), 80);
+  }
+
+  function closeForgotModal() {
+    document.getElementById('fpBackdrop').classList.remove('open');
+  }
+
+  function closeForgotModalOnBackdrop(e) {
+    if (e.target === document.getElementById('fpBackdrop')) closeForgotModal();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeForgotModal();
+  });
+
+  function submitForgotPassword() {
+    const email = document.getElementById('fpEmail').value.trim();
+    const btn = document.getElementById('fpSubmitBtn');
+    const result = document.getElementById('fpResult');
+
+    if (!email) {
+      result.className = 'fp-result error';
+      result.textContent = 'Please enter your email address.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Resetting...';
+    result.className = 'fp-result';
+    result.innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch('{% url "forgot_password" %}', { method: 'POST', body: formData })
+      .then(r => r.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.textContent = 'Reset Password';
+        if (data.ok) {
+          result.className = 'fp-result success';
+          result.innerHTML =
+            '✓ Password reset! Your new temporary password is:<br>' +
+            '<span class="fp-temp-pw">' + data.temp_password + '</span><br>' +
+            '<small style="display:block;margin-top:0.5rem;opacity:0.85;">Copy this, close the dialog, and log in. Change it from your profile afterwards.</small>';
+        } else {
+          result.className = 'fp-result error';
+          result.textContent = data.error || 'Something went wrong. Please try again.';
+        }
+      })
+      .catch(() => {
+        btn.disabled = false;
+        btn.textContent = 'Reset Password';
+        result.className = 'fp-result error';
+        result.textContent = 'Network error. Please try again.';
+      });
+  }
+</script>
 {% endblock %}

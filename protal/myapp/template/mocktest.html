@@ -45,7 +45,10 @@
 
     <div class="grid three">
       {% for test in tests %}
-        <article class="test-card">
+        <article class="test-card" style="{% if test.is_locked %}opacity: 0.65; position: relative;{% endif %}">
+          {% if test.is_locked %}
+            <div class="lock-overlay" style="position: absolute; top: 12px; right: 12px; font-size: 1.25rem;">🔒</div>
+          {% endif %}
           <div class="badge-row">
             <span class="badge {{ test.difficulty }}">{{ test.get_difficulty_display }}</span>
             <span class="badge">{{ test.duration_minutes }} min</span>
@@ -53,10 +56,18 @@
           <h3>{{ test.title }}</h3>
           <p>Questions: {{ test.question_count }}</p>
           <p>Topics: {{ test.topics }}</p>
-          <form method="post" action="{% url 'start_test' test.id %}">
-            {% csrf_token %}
-            <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Starting...">Start Test</button>
-          </form>
+          
+          {% if test.is_locked %}
+            <div class="lock-message" style="margin-top: auto; padding: 8px; font-size: 0.85rem; color: var(--rose); background: rgba(244, 63, 94, 0.08); border-radius: 4px; border: 1px solid rgba(244, 63, 94, 0.18);">
+              {{ test.lock_reason }}
+            </div>
+            <button class="btn btn-ghost btn-wide btn-small" style="margin-top: 12px;" disabled>Locked</button>
+          {% else %}
+            <form method="post" action="{% url 'start_test' test.id %}">
+              {% csrf_token %}
+              <button class="btn btn-primary btn-wide" type="submit" data-loading-text="Starting...">Start Test</button>
+            </form>
+          {% endif %}
         </article>
       {% empty %}
         <div class="empty-note">No mock tests are available yet.</div>
@@ -69,16 +80,16 @@
       <h2 class="panel-title">Performance Progress</h2>
       <div class="progress-list">
         <div class="progress-item">
-          <div class="progress-meta"><span>Aptitude</span><span>80%</span></div>
-          <div class="progress-track"><div class="progress-fill" data-progress="80"></div></div>
+          <div class="progress-meta"><span>Aptitude Round Average</span><span>{{ stats.aptitude_avg|default:0 }}%</span></div>
+          <div class="progress-track"><div class="progress-fill" data-progress="{{ stats.aptitude_avg|default:0 }}"></div></div>
         </div>
         <div class="progress-item">
-          <div class="progress-meta"><span>Coding</span><span>65%</span></div>
-          <div class="progress-track"><div class="progress-fill amber" data-progress="65"></div></div>
+          <div class="progress-meta"><span>Coding Round Average</span><span>{{ stats.coding_avg|default:0 }}%</span></div>
+          <div class="progress-track"><div class="progress-fill amber" data-progress="{{ stats.coding_avg|default:0 }}"></div></div>
         </div>
         <div class="progress-item">
-          <div class="progress-meta"><span>Communication</span><span>90%</span></div>
-          <div class="progress-track"><div class="progress-fill rose" data-progress="90"></div></div>
+          <div class="progress-meta"><span>Technical Interview Average</span><span>{{ stats.interview_avg|default:0 }}%</span></div>
+          <div class="progress-track"><div class="progress-fill rose" data-progress="{{ stats.interview_avg|default:0 }}"></div></div>
         </div>
       </div>
     </div>

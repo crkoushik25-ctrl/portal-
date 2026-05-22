@@ -466,14 +466,23 @@
   // Track working code in memory
   let codeDrafts = {};
 
-  // Initialize drafts with database submissions or default templates
+  // Placeholder comments shown when the editor is blank (no prior submission)
+  const placeholders = {
+    python:     '# Type here...\n',
+    java:       '// Type here...\n',
+    cpp:        '// Type here...\n',
+    c:          '// Type here...\n',
+    javascript: '// Type here...\n'
+  };
+
+  // Initialize drafts: start blank (placeholder) unless a prior submission exists
   Object.keys(questionsData).forEach(qId => {
     codeDrafts[qId] = {
-      python: questionsData[qId].python,
-      java: questionsData[qId].java,
-      cpp: questionsData[qId].cpp,
-      c: questionsData[qId].c,
-      javascript: questionsData[qId].javascript
+      python:     placeholders.python,
+      java:       placeholders.java,
+      cpp:        placeholders.cpp,
+      c:          placeholders.c,
+      javascript: placeholders.javascript
     };
 
     // If there is an existing submission for this question, load it!

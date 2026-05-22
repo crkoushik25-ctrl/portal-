@@ -208,10 +208,11 @@ def ensure_default_coding_questions():
         'C Programming Exam': [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
         'C++ Programming Exam': [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0],
         'JavaScript Programming Exam': [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 1],
+        'Coding Test': [0, 1, 2, 3, 4],
     }
     
     for exam_title, question_indices in exams_map.items():
-        test = PrepTest.objects.filter(title=exam_title, category=PrepTest.CODING).first()
+        test = PrepTest.objects.filter(title=exam_title).first()
         if not test:
             continue
         
@@ -245,9 +246,12 @@ def ensure_default_coding_questions():
 
 
 def ensure_default_aptitude_questions():
-    aptitude_tests = PrepTest.objects.filter(category=PrepTest.APTITUDE, is_active=True)
+    aptitude_tests = PrepTest.objects.filter(category__in=[PrepTest.APTITUDE, PrepTest.MOCK], is_active=True)
 
     for test in aptitude_tests:
+        if test.title == 'Coding Test':
+            continue
+            
         if test.aptitude_questions.exists():
             continue
 
@@ -701,6 +705,35 @@ def logout_page(request):
     return redirect('login')
 
 
+import json
+import random
+import string
+
+def forgot_password(request):
+    """Simple forgot-password handler: generates a temp password and displays it."""
+    if request.method != 'POST':
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(['POST'])
+
+    from django.http import JsonResponse as _JsonResponse
+
+    email = request.POST.get('email', '').strip().lower()
+    if not email:
+        return _JsonResponse({'ok': False, 'error': 'Please enter your email address.'})
+
+    user = User.objects.filter(username=email).first() or User.objects.filter(email__iexact=email).first()
+    if not user:
+        return _JsonResponse({'ok': False, 'error': 'No account found with that email address.'})
+
+    # Generate a readable temporary password
+    chars = string.ascii_letters + string.digits
+    temp_password = ''.join(random.choices(chars, k=10))
+    user.set_password(temp_password)
+    user.save()
+
+    return _JsonResponse({'ok': True, 'temp_password': temp_password})
+
+
 def get_coding_stats(user):
     if not user or not user.is_authenticated:
         return {
@@ -708,6 +741,10 @@ def get_coding_stats(user):
             'medium_solved': 0, 'medium_total': 0, 'medium_percent': 0,
             'hard_solved': 0, 'hard_total': 0, 'hard_percent': 0,
             'languages': [],
+            'tests_completed': 0,
+            'average_score': 0,
+            'best_score': 0,
+            'questions_solved': 0,
         }
 
     total_questions = CodingQuestion.objects.all()
@@ -751,6 +788,17 @@ def get_coding_stats(user):
             'percent': round((count / total_lang_subs) * 100) if total_lang_subs else 0
         })
 
+    completed_coding_attempts = TestAttempt.objects.filter(
+        user=user,
+        test__category=PrepTest.CODING,
+        status=TestAttempt.COMPLETED
+    )
+    
+    tests_completed = completed_coding_attempts.count()
+    average_score = round(completed_coding_attempts.aggregate(score=Avg('score'))['score'] or 0)
+    best_score = completed_coding_attempts.aggregate(score=Max('score'))['score'] or 0
+    questions_solved = easy_solved + medium_solved + hard_solved
+
     return {
         'easy_solved': easy_solved,
         'easy_total': easy_total,
@@ -762,6 +810,10 @@ def get_coding_stats(user):
         'hard_total': hard_total,
         'hard_percent': hard_percent,
         'languages': languages,
+        'tests_completed': tests_completed,
+        'average_score': average_score,
+        'best_score': best_score,
+        'questions_solved': questions_solved,
     }
 
 
@@ -769,10 +821,11 @@ def get_coding_stats(user):
 def dashboard(request):
     ensure_default_tests()
     attempts = TestAttempt.objects.filter(user=request.user)
-    completed_tests = attempts.count()
-    average_score = attempts.aggregate(score=Avg('score'))['score'] or 0
-    coding_score = attempts.filter(test__category=PrepTest.CODING).aggregate(score=Avg('score'))['score'] or 0
-    mock_score = attempts.filter(test__category=PrepTest.MOCK).aggregate(score=Avg('score'))['score'] or 0
+    completed_attempts = attempts.filter(status=TestAttempt.COMPLETED)
+    completed_tests = completed_attempts.count()
+    average_score = completed_attempts.aggregate(score=Avg('score'))['score'] or 0
+    coding_score = completed_attempts.filter(test__category=PrepTest.CODING).aggregate(score=Avg('score'))['score'] or 0
+    mock_score = completed_attempts.filter(test__category=PrepTest.MOCK).aggregate(score=Avg('score'))['score'] or 0
     resume = Resume.objects.filter(user=request.user).first()
     activities = Activity.objects.filter(user=request.user)[:6]
     
@@ -838,16 +891,83 @@ def resume(request):
 
 def mocktest(request):
     ensure_default_tests()
-    tests = PrepTest.objects.filter(category=PrepTest.MOCK, is_active=True)
-    total_attempts = TestAttempt.objects.count()
-    user_attempts = TestAttempt.objects.filter(user=request.user) if request.user.is_authenticated else TestAttempt.objects.none()
-    stats = {
-        'tests_completed': user_attempts.count(),
-        'average_score': round(user_attempts.aggregate(score=Avg('score'))['score'] or 0),
-        'mock_interviews': user_attempts.filter(test__title__icontains='interview').count(),
-        'questions_solved': user_attempts.aggregate(total=Count('id'))['total'] or total_attempts,
-    }
-    return render(request, 'mocktest.html', {'tests': tests, 'stats': stats})
+    # Order mock tests sequentially: Aptitude -> Coding -> Interview
+    order_map = {'Aptitude Test': 1, 'Coding Test': 2, 'Technical Interview': 3}
+    tests_qs = PrepTest.objects.filter(category=PrepTest.MOCK, is_active=True)
+    tests = sorted(list(tests_qs), key=lambda t: order_map.get(t.title, 99))
+    total_attempts = TestAttempt.objects.filter(test__category=PrepTest.MOCK, status=TestAttempt.COMPLETED).count()
+    
+    has_passed_aptitude = False
+    has_passed_coding = False
+    
+    if request.user.is_authenticated:
+        completed_mock_attempts = TestAttempt.objects.filter(
+            user=request.user,
+            test__category=PrepTest.MOCK,
+            status=TestAttempt.COMPLETED
+        )
+        has_passed_aptitude = completed_mock_attempts.filter(test__title='Aptitude Test', score__gte=50).exists()
+        has_passed_coding = completed_mock_attempts.filter(test__title='Coding Test', score__gte=50).exists()
+        
+        aptitude_avg = completed_mock_attempts.filter(test__title='Aptitude Test').aggregate(score=Avg('score'))['score'] or 0
+        coding_avg = completed_mock_attempts.filter(test__title='Coding Test').aggregate(score=Avg('score'))['score'] or 0
+        interview_avg = completed_mock_attempts.filter(test__title='Technical Interview').aggregate(score=Avg('score'))['score'] or 0
+        
+        stats = {
+            'tests_completed': completed_mock_attempts.count(),
+            'average_score': round(completed_mock_attempts.aggregate(score=Avg('score'))['score'] or 0),
+            'mock_interviews': completed_mock_attempts.filter(test__title__icontains='interview').count(),
+            'questions_solved': completed_mock_attempts.count() or total_attempts,
+            'aptitude_avg': round(aptitude_avg),
+            'coding_avg': round(coding_avg),
+            'interview_avg': round(interview_avg),
+        }
+    else:
+        stats = {
+            'tests_completed': 0,
+            'average_score': 0,
+            'mock_interviews': 0,
+            'questions_solved': total_attempts,
+            'aptitude_avg': 0,
+            'coding_avg': 0,
+            'interview_avg': 0,
+        }
+
+    annotated_tests = []
+    for test in tests:
+        test_info = {
+            'id': test.id,
+            'title': test.title,
+            'difficulty': test.difficulty,
+            'get_difficulty_display': test.get_difficulty_display(),
+            'duration_minutes': test.duration_minutes,
+            'question_count': test.question_count,
+            'topics': test.topics,
+            'is_locked': False,
+            'lock_reason': '',
+        }
+        
+        if request.user.is_authenticated:
+            if test.title == 'Coding Test':
+                if not has_passed_aptitude:
+                    test_info['is_locked'] = True
+                    test_info['lock_reason'] = 'Pass the Aptitude Test with >= 50% to unlock this round.'
+            elif test.title == 'Technical Interview':
+                if not has_passed_coding:
+                    test_info['is_locked'] = True
+                    if not has_passed_aptitude:
+                        test_info['lock_reason'] = 'Pass the Aptitude and Coding tests to unlock this round.'
+                    else:
+                        test_info['lock_reason'] = 'Pass the Coding Test with >= 50% to unlock this round.'
+        else:
+            # Require login for all test actions
+            if test.title in ['Coding Test', 'Technical Interview']:
+                test_info['is_locked'] = True
+                test_info['lock_reason'] = 'Sign in and complete previous rounds to unlock.'
+
+        annotated_tests.append(test_info)
+
+    return render(request, 'mocktest.html', {'tests': annotated_tests, 'stats': stats})
 
 
 @login_required(login_url='login')
@@ -857,7 +977,7 @@ def take_aptitude_test(request, attempt_id):
         TestAttempt.objects.select_related('test'),
         pk=attempt_id,
         user=request.user,
-        test__category=PrepTest.APTITUDE,
+        test__category__in=[PrepTest.APTITUDE, PrepTest.MOCK],
     )
 
     if attempt.status == TestAttempt.COMPLETED:
@@ -867,6 +987,8 @@ def take_aptitude_test(request, attempt_id):
 
     if not questions:
         messages.error(request, 'Questions are not available for this test yet.')
+        if attempt.test.category == PrepTest.MOCK:
+            return redirect('mocktest')
         return redirect('aptitude')
 
     if request.method == 'POST':
@@ -936,7 +1058,7 @@ def aptitude_result(request, attempt_id):
         TestAttempt.objects.select_related('test'),
         pk=attempt_id,
         user=request.user,
-        test__category=PrepTest.APTITUDE,
+        test__category__in=[PrepTest.APTITUDE, PrepTest.MOCK],
     )
 
     if attempt.status != TestAttempt.COMPLETED:
@@ -975,10 +1097,33 @@ def start_test(request, test_id):
             return redirect('mocktest')
         return redirect(test.category)
 
+    # Locking validation for mock tests:
+    if test.category == PrepTest.MOCK:
+        completed_mock_attempts = TestAttempt.objects.filter(
+            user=request.user,
+            test__category=PrepTest.MOCK,
+            status=TestAttempt.COMPLETED
+        )
+        if test.title == 'Coding Test':
+            has_passed_aptitude = completed_mock_attempts.filter(test__title='Aptitude Test', score__gte=50).exists()
+            if not has_passed_aptitude:
+                messages.error(request, 'You must pass the Aptitude Test (score >= 50%) to unlock the Coding Test round.')
+                return redirect('mocktest')
+        elif test.title == 'Technical Interview':
+            has_passed_coding = completed_mock_attempts.filter(test__title='Coding Test', score__gte=50).exists()
+            if not has_passed_coding:
+                messages.error(request, 'You must pass the Coding Test (score >= 50%) to unlock the Technical Interview round.')
+                return redirect('mocktest')
+
     if test.category == PrepTest.APTITUDE:
         question_count = test.aptitude_questions.count()
     elif test.category == PrepTest.CODING:
         question_count = test.coding_questions.count()
+    elif test.category == PrepTest.MOCK:
+        if test.title == 'Coding Test':
+            question_count = test.coding_questions.count()
+        else:
+            question_count = test.aptitude_questions.count()
     else:
         question_count = 0
 
@@ -990,8 +1135,10 @@ def start_test(request, test_id):
     if test.category == PrepTest.CODING:
         return redirect('take_coding_test', attempt_id=attempt.id)
     if test.category == PrepTest.MOCK:
-        messages.success(request, f'{test.title} started.')
-        return redirect('mocktest')
+        if test.title == 'Coding Test':
+            return redirect('take_coding_test', attempt_id=attempt.id)
+        else:
+            return redirect('take_aptitude_test', attempt_id=attempt.id)
     messages.success(request, f'{test.title} started.')
     return redirect(test.category)
 
@@ -1288,7 +1435,7 @@ def take_coding_test(request, attempt_id):
         TestAttempt.objects.select_related('test'),
         pk=attempt_id,
         user=request.user,
-        test__category=PrepTest.CODING,
+        test__category__in=[PrepTest.CODING, PrepTest.MOCK],
     )
 
     if attempt.status == TestAttempt.COMPLETED:
@@ -1297,6 +1444,8 @@ def take_coding_test(request, attempt_id):
     questions = list(attempt.test.coding_questions.all().order_by('order'))
     if not questions:
         messages.error(request, 'No questions found for this exam.')
+        if attempt.test.category == PrepTest.MOCK:
+            return redirect('mocktest')
         return redirect('coding')
 
     # Calculate remaining time
@@ -1461,7 +1610,7 @@ def submit_coding_exam(request, attempt_id):
         TestAttempt.objects.select_related('test'),
         pk=attempt_id,
         user=request.user,
-        test__category=PrepTest.CODING,
+        test__category__in=[PrepTest.CODING, PrepTest.MOCK],
     )
 
     if attempt.status == TestAttempt.COMPLETED:
@@ -1497,7 +1646,7 @@ def coding_result(request, attempt_id):
         TestAttempt.objects.select_related('test'),
         pk=attempt_id,
         user=request.user,
-        test__category=PrepTest.CODING,
+        test__category__in=[PrepTest.CODING, PrepTest.MOCK],
     )
 
     if attempt.status != TestAttempt.COMPLETED:
