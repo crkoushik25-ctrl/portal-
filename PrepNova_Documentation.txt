@@ -1,0 +1,179 @@
+================================================================================
+                    PREPNOVA PLACEMENT PREPARATION PLATFORM
+                 PROBLEM STATEMENT & TECHNICAL DOCUMENTATION
+================================================================================
+
+1. PROJECT OVERVIEW & PROBLEM STATEMENT
+--------------------------------------------------------------------------------
+1.1 Introduction
+PrepNova is a premium, comprehensive placement preparation portal built using the
+Django web framework. The platform acts as a unified hub for students and job 
+seekers aiming to excel in technical and non-technical recruitment processes.
+
+1.2 The Problem
+During placement seasons, candidates face multiple scattered challenges that 
+hinder their preparation efficiency:
+* Fragmented Resources: Candidates often need to use multiple disparate websites 
+  to prepare for different assessment rounds: one for quantitative/logical 
+  aptitude, another (like LeetCode or HackerRank) for coding, a third for resume 
+  building, and a fourth for mock interviews.
+* Lack of Simulated Multi-Round Drives: Standard preparation platforms offer
+  isolated practice but rarely simulate the sequential, high-pressure, multi-round 
+  nature of actual corporate recruitment drives (e.g., passing a timed aptitude test 
+  to unlock the coding round).
+* No Unified Analytics: Because preparation is spread across multiple platforms,
+  candidates have no way to monitor their holistic progress or easily identify 
+  whether they need to spend more time on data structures, logical reasoning, or 
+  resume formatting.
+* Resume Optimization Hurdles: Resume screening is the first hurdle in any recruitment
+  drive. Many candidates use poorly formatted templates that fail Applicant Tracking 
+  System (ATS) checks and lack feedback on content completeness.
+
+1.3 The PrepNova Solution
+PrepNova addresses these challenges by merging all key preparation elements into
+a single, unified, and premium workspace:
+* Timed Aptitude Practice: Interactive tests categorized by difficulty, with 
+  detailed explanations for each answer.
+* Integrated Online Coding Arena: Supports Python, Java, C++, C, and JavaScript 
+  with syntax-highlighted editor templates and an online compiler to validate 
+  solutions against test suites.
+* Sequential Mock Test Engine: Simulates real recruitment drives by unlocking 
+  successive recruitment phases only when the candidate achieves a passing 
+  threshold in the prior round.
+* Smart Resume Builder: Interactive forms that dynamically compute an ATS-friendly
+  readability score based on completeness and keyword density.
+* Central Dashboard: Tracks activity history, average scores, solved questions, 
+  and topic-specific strengths (e.g., Quantitative vs. Data Interpretation).
+
+
+2. SYSTEM ARCHITECTURE & SYSTEM DATA MODELS
+--------------------------------------------------------------------------------
+The backend database schema in PrepNova is divided into five core functional modules:
+
+2.1 User Profiles & Activity Logging
+* UserProfile: Associates metadata (phone, location, and registration details) 
+  with the core Django User model.
+* Activity: Records chronological actions (e.g., "Created account", "Completed Mock Test")
+  to build a real-time activity feed on the dashboard.
+
+2.2 Test Structure & Attempts
+* PrepTest: Defines an assessment module. Properties include:
+  - Title & Category ('aptitude', 'coding', 'mock', 'resume')
+  - Difficulty ('easy', 'medium', 'hard')
+  - Question count and duration (minutes)
+  - Topic focus tags
+  - Status flag (active/inactive)
+* TestAttempt: Logs candidate assessment performance. Properties include:
+  - Reference to User and PrepTest
+  - Attempt status ('started', 'completed')
+  - Score, correct answers, and total questions
+  - Timestamp markers (started_at, completed_at)
+  - Detailed JSON payload for topic-wise breakdowns
+
+2.3 Aptitude & MCQ Modules
+* AptitudeQuestion: Holds individual MCQ data. Features:
+  - Topic categorization (Quantitative, Reasoning, Data Interpretation)
+  - Question prompt and four options (A, B, C, D)
+  - Correct option reference
+  - Educational explanation for review post-test
+* AttemptAnswer: Maps user answers to questions during an attempt. Tracks chosen 
+  options and marks correctness.
+
+2.4 Coding & Compiler Modules
+* CodingQuestion: Houses problem definitions for technical rounds. Features:
+  - Title, description, input/output formats, and sample inputs/outputs
+  - Hidden JSON test cases (input/output mappings) for validation
+  - Pre-populated starter code templates for Python, Java, C++, C, and JavaScript
+* CodingSubmission: Captures user code submissions. Features:
+  - Code text and target compiler language
+  - Test outcomes (Passed, Failed, Compile Error, etc.)
+  - Count of passed cases vs. total test cases
+
+2.5 Resume Builder
+* Resume: Stores professional records including summary, skills, projects, work 
+  experience, and education history.
+* ATS Evaluation Logic: A Python helper calculates an ATS score out of 100 based on 
+  the presence and completeness of ten critical professional fields.
+
+
+3. SYSTEM ROUTES & ENDPOINTS
+--------------------------------------------------------------------------------
+The application utilizes a RESTful URL structure mapped in myapp/urls.py:
+
+3.1 Authentication & Portal Access
+* '/' (Name: 'first'): The application landing homepage.
+* '/getstarted/' (Name: 'getstarted'): Direct onboarding guidelines page.
+* '/login/' (Name: 'login'): Combined login and registration page.
+* '/logout/' (Name: 'logout'): Terminates user session.
+* '/forgot-password/' (Name: 'forgot_password'): Formulates temporary passwords.
+* '/dashboard/' (Name: 'dashboard'): Center dashboard showcasing progress analytics.
+
+3.2 Practice Modules
+* '/aptitude/' (Name: 'aptitude'): Displays available aptitude assessments.
+* '/coding/' (Name: 'coding'): Lists coding tasks and programming contests.
+* '/resume/' (Name: 'resume'): Portal to manage and update the resume builder.
+* '/mocktest/' (Name: 'mocktest'): Sequential recruitment drive simulator page.
+
+3.3 Test Attempt Engine
+* '/tests/<test_id>/start/': Initializes a new test attempt.
+* '/attempts/<attempt_id>/take/': Active interface to solve MCQs.
+* '/attempts/<attempt_id>/result/': Summarized breakdown of MCQ performance.
+* '/attempts/<attempt_id>/coding/take/': Active compiler workspace interface.
+* '/attempts/<attempt_id>/coding/run/': Sandbox evaluation (temporary compilation runs).
+* '/attempts/<attempt_id>/coding/submit_code/': Validates solution against full test cases.
+* '/attempts/<attempt_id>/coding/submit_exam/': Finalizes the coding exam session.
+* '/attempts/<attempt_id>/coding/result/': Comprehensive coding performance breakdown.
+
+3.4 Administrator Control Panel
+* '/site-admin/login/' (Name: 'site_admin_login'): Access gate for portal managers.
+* '/site-admin/' (Name: 'site_admin_dashboard'): Portal statistics and activity logs.
+* '/site-admin/tests/': CRUD manager for aptitude, coding, and mock tests.
+* '/site-admin/questions/': MCQ question bank curator.
+* '/site-admin/coding-questions/': Coding question bank compiler configurations.
+
+
+4. LOCAL DEVELOPMENT & SETUP
+--------------------------------------------------------------------------------
+Follow these steps to instantiate the environment:
+
+1. Create a Python Virtual Environment:
+   $ python -m venv venv
+
+2. Activate the Virtual Environment:
+   - Windows (Command Prompt): venv\Scripts\activate.bat
+   - Windows (PowerShell):     venv\Scripts\Activate.ps1
+   - macOS / Linux:            source venv/bin/activate
+
+3. Install Required Dependencies:
+   $ pip install -r requirements.txt
+
+4. Perform Database Migrations:
+   $ python manage.py migrate
+
+5. Compile Static Assets (WhiteNoise static collection):
+   $ python manage.py collectstatic --noinput
+
+6. Create Portal Superuser (Administrator):
+   $ python manage.py createsuperuser
+
+7. Fire Up the Local Server:
+   $ python manage.py runserver
+
+8. Access the Portal:
+   Open browser and point to http://127.0.0.1:8000/
+
+
+5. ENVIRONMENT & DEPLOYMENT STRATEGIES
+--------------------------------------------------------------------------------
+To transition from development to a secure production state, apply these rules:
+* PostgreSQL Database: Replace the local sqlite database by setting the 
+  DATABASE_URL environment variable.
+* Security Hardening:
+  - Toggle DEBUG = False in environment configs.
+  - Set ALLOWED_HOSTS = ['yourdomain.com', 'www.yourdomain.com'].
+  - Set SECURE_SSL_REDIRECT = True in settings.py to mandate HTTPS.
+  - Ensure SESSION_COOKIE_SECURE = True and CSRF_COOKIE_SECURE = True.
+* Static Management: Collect static assets on build hooks using:
+  $ python manage.py collectstatic --noinput
+* Process Manager: Bind the WSGI application with Gunicorn:
+  $ gunicorn protal.wsgi:application --bind 0.0.0.0:8000

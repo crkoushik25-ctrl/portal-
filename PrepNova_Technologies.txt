@@ -1,0 +1,47 @@
+================================================================================
+                    PREPNOVA PLACEMENT PREPARATION PLATFORM
+                           TECHNOLOGY STACK SUMMARY
+================================================================================
+
+1. CORE LANGUAGES & RUNTIMES
+--------------------------------------------------------------------------------
+* Python (v3.10 or higher)
+  - Execution runtime for backend logic, routing views, testing scripts, and
+    compilation helpers.
+* JavaScript (ES6+ / Vanilla JS)
+  - Powers dynamic frontend updates, asynchronous compiler API calls, interactive
+    resume form score computations, and user state styling toggles.
+
+2. BACKEND WEB FRAMEWORK
+--------------------------------------------------------------------------------
+* Django Web Framework (v6.0.5)
+  - Server framework structuring MVC architecture, template engines, form controls,
+    and user session authentication (login, logout, registration, forgot-password).
+
+3. DATABASE ENGINE & INTERFACES
+--------------------------------------------------------------------------------
+* SQLite3
+  - Lightweight, local database configuration for rapid development testing.
+* PostgreSQL
+  - Recommended SQL database engine for robust, secure production deployments.
+* psycopg2-binary
+  - DB interface bridge linking Django ORM models to PostgreSQL drivers.
+
+4. WEB SERVER & ASSETS PIPELINE
+--------------------------------------------------------------------------------
+* Gunicorn
+  - High-concurrency WSGI HTTP process manager serving production workloads.
+* WhiteNoise
+  - Python static asset delivery system serving index.css and index.js files
+    directly from Django with built-in gzip compression and cached manifests.
+
+5. FRONTEND CUSTOM SYSTEM
+--------------------------------------------------------------------------------
+* HTML5
+  - Semantic, accessible markup tags (nav, header, footer, main, svg).
+* CSS3 (Custom Design System)
+  - Custom variables and styling tokens for dark themes (bg, surface, teal, muted).
+  - Modern layouts powered by CSS Grid and Flexbox.
+  - Advanced styling details: background radial gradients, backdrop blurs,
+    fluid clamp text scales, and hover-triggered scale transitions.
+  - SVG Vector graphics embedded natively for logo marks, dashboards, and shields.
